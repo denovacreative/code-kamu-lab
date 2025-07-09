@@ -61,7 +61,12 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
-				}
+				},
+				'pictoblox-purple': 'hsl(var(--pictoblox-purple))',
+				'pictoblox-purple-dark': 'hsl(var(--pictoblox-purple-dark))',
+				'pictoblox-blue': 'hsl(var(--pictoblox-blue))',
+				'pictoblox-pink': 'hsl(var(--pictoblox-pink))',
+				'pictoblox-orange': 'hsl(var(--pictoblox-orange))'
 			},
 			borderRadius: {
 				lg: 'var(--radius)',
