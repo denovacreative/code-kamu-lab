@@ -1,16 +1,20 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/contexts/AuthContext";
 import { 
   Code, 
   FileText, 
   Brain, 
   Box,
   Blocks,
-  Laptop
+  Laptop,
+  LogOut,
+  User
 } from "lucide-react";
 
 const Dashboard = () => {
+  const { user, signOut } = useAuth();
   const features = [
     // Block Coding Section
     {
@@ -81,7 +85,23 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-[hsl(var(--pictoblox-purple))] to-[hsl(var(--pictoblox-purple-dark))] p-6">
       <div className="max-w-6xl mx-auto">
-        {/* Header */}
+        {/* Header with User Info */}
+        <div className="flex justify-between items-center mb-8">
+          <div className="text-white">
+            <h2 className="text-lg font-medium">Welcome back!</h2>
+            <p className="text-white/80">{user?.email}</p>
+          </div>
+          <Button
+            variant="outline"
+            onClick={signOut}
+            className="bg-white/10 border-white/20 text-white hover:bg-white/20"
+          >
+            <LogOut className="h-4 w-4 mr-2" />
+            Sign Out
+          </Button>
+        </div>
+
+        {/* Main Question */}
         <div className="text-center mb-12">
           <div className="bg-white/10 backdrop-blur-sm rounded-3xl p-8 mb-8 border border-white/20">
             <h1 className="text-4xl font-bold text-white mb-4">What would you like to do?</h1>
