@@ -46,8 +46,11 @@ const Landing = () => {
 
   const handleGetStarted = () => {
     if (userType) {
-      // Redirect to auth with role parameter
+      // Navigate to auth with role parameter
       window.location.href = `/auth?role=${userType}`;
+    } else {
+      // If no role selected, go to auth page
+      window.location.href = '/auth';
     }
   };
 

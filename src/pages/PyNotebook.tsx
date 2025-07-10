@@ -6,6 +6,8 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import NotebookSidebar from '@/components/NotebookSidebar';
+import NotebookCanvas from '@/components/NotebookCanvas';
 import { 
   Play, 
   Plus, 
@@ -18,7 +20,10 @@ import {
   Terminal,
   Clock,
   Maximize2,
-  Minimize2
+  Minimize2,
+  Layout,
+  Settings,
+  Palette
 } from 'lucide-react';
 
 interface NotebookCell {
@@ -33,6 +38,8 @@ interface NotebookCell {
 const PyNotebook = () => {
   const { user, signOut } = useAuth();
   const [showTerminal, setShowTerminal] = useState(false);
+  const [showCanvas, setShowCanvas] = useState(false);
+  const [showSidebar, setShowSidebar] = useState(true);
   const [terminalInput, setTerminalInput] = useState('');
   const [terminalHistory, setTerminalHistory] = useState<string[]>([
     'Python 3.9.0 - Interactive Terminal',
@@ -159,6 +166,11 @@ const PyNotebook = () => {
     }
   }, [activeCell]);
 
+  const handleFileSelect = (file: any) => {
+    console.log('File selected:', file);
+    // Handle file selection logic here
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-[hsl(var(--pictoblox-purple))] to-[hsl(var(--pictoblox-purple-dark))]">
       {/* Header */}
@@ -197,210 +209,252 @@ const PyNotebook = () => {
         </div>
       </div>
 
-      {/* Notebook Content */}
-      <div className="max-w-4xl mx-auto p-6">
-        {/* Toolbar */}
-        <div className="bg-white/95 backdrop-blur-sm rounded-lg p-4 mb-6 border border-white/20">
-          <div className="flex items-center space-x-2">
-            <Button
-              onClick={() => addCell('code')}
-              size="sm"
-              className="bg-[hsl(var(--pictoblox-blue))] hover:bg-[hsl(var(--pictoblox-blue))/80]"
-            >
-              <Plus className="h-4 w-4 mr-1" />
-              Code
-            </Button>
-            <Button
-              onClick={() => addCell('markdown')}
-              variant="outline"
-              size="sm"
-            >
-              <Plus className="h-4 w-4 mr-1" />
-              Markdown
-            </Button>
-            <Button
-              onClick={() => setShowTerminal(!showTerminal)}
-              variant={showTerminal ? "default" : "outline"}
-              size="sm"
-              className={showTerminal ? "bg-[hsl(var(--pictoblox-purple))]" : ""}
-            >
-              <Terminal className="h-4 w-4 mr-1" />
-              Terminal
-            </Button>
-            <div className="flex-1" />
-            <Badge variant="secondary" className="bg-green-100 text-green-700">
-              {cells.length} cells
-            </Badge>
-          </div>
-        </div>
+      {/* Main Content Area */}
+      <div className="flex-1 flex overflow-hidden">
+        {/* Sidebar */}
+        {showSidebar && (
+          <NotebookSidebar onFileSelect={handleFileSelect} />
+        )}
 
-        {/* Main Content Layout */}
-        <div className={`grid gap-6 ${showTerminal ? 'grid-cols-1 lg:grid-cols-2' : 'grid-cols-1'}`}>
-          {/* Notebook Cells */}
-          <div className="space-y-4">
-            {cells.map((cell, index) => (
-              <Card
-                key={cell.id}
-                className={`border-2 transition-all duration-200 ${
-                  activeCell === cell.id 
-                    ? 'border-[hsl(var(--pictoblox-purple))] shadow-lg' 
-                    : 'border-gray-200 hover:border-gray-300'
-                } bg-white/95 backdrop-blur-sm`}
-                onClick={() => setActiveCell(cell.id)}
+        {/* Notebook Content */}
+        <div className="flex-1 flex flex-col overflow-hidden">
+          {/* Toolbar */}
+          <div className="bg-white/95 backdrop-blur-sm p-4 border-b border-white/20">
+            <div className="flex items-center space-x-2">
+              <Button
+                onClick={() => addCell('code')}
+                size="sm"
+                className="bg-[hsl(var(--pictoblox-blue))] hover:bg-[hsl(var(--pictoblox-blue))/80]"
               >
-              <CardHeader className="pb-2">
-                <div className="flex justify-between items-center">
-                  <div className="flex items-center space-x-2">
-                    <Badge 
-                      variant={cell.type === 'code' ? 'default' : 'secondary'}
-                      className={cell.type === 'code' ? 'bg-[hsl(var(--pictoblox-blue))]' : ''}
-                    >
-                      {cell.type === 'code' ? 'Code' : 'Markdown'} [{index + 1}]
-                    </Badge>
-                    {cell.isExecuting && (
-                      <Badge variant="outline" className="text-orange-600 border-orange-300">
-                        Running...
-                      </Badge>
-                    )}
-                    {cell.executionTime && cell.executionTime > 0 && (
-                      <Badge variant="outline" className="text-blue-600 border-blue-300">
-                        <Clock className="h-3 w-3 mr-1" />
-                        {cell.executionTime.toFixed(0)}ms
-                      </Badge>
-                    )}
-                  </div>
-                  
-                  <div className="flex items-center space-x-2">
-                    {cell.type === 'code' && (
-                      <Button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          executeCell(cell.id);
-                        }}
-                        size="sm"
-                        variant="outline"
-                        disabled={cell.isExecuting}
-                        className="text-green-600 border-green-300 hover:bg-green-50"
-                      >
-                        <Play className="h-3 w-3 mr-1" />
-                        Run
-                      </Button>
-                    )}
-                    <Button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        deleteCell(cell.id);
-                      }}
-                      size="sm"
-                      variant="outline"
-                      className="text-red-600 border-red-300 hover:bg-red-50"
-                    >
-                      <Trash2 className="h-3 w-3" />
-                    </Button>
-                  </div>
-                </div>
-              </CardHeader>
-              
-              <CardContent className="pt-0">
-                <Textarea
-                  ref={(el) => (textareaRefs.current[cell.id] = el)}
-                  value={cell.content}
-                  onChange={(e) => updateCellContent(cell.id, e.target.value)}
-                  onKeyDown={(e) => handleKeyDown(e, cell.id)}
-                  placeholder={
-                    cell.type === 'code' 
-                      ? "# Write your Python code here...\n# Press Ctrl+Enter to run"
-                      : "Write your markdown here..."
-                  }
-                  className="min-h-24 font-mono text-sm resize-none border-0 focus:ring-0 bg-gray-50"
-                  style={{ 
-                    height: Math.max(96, cell.content.split('\n').length * 24 + 48) + 'px'
-                  }}
-                />
-                
-                {/* Output for code cells */}
-                {cell.type === 'code' && cell.output !== undefined && (
-                  <div className="mt-3 p-3 bg-gray-900 text-green-400 rounded-md font-mono text-sm">
-                    <div className="text-gray-500 text-xs mb-1">Output:</div>
-                    <pre className="whitespace-pre-wrap">
-                      {cell.output || '(no output)'}
-                    </pre>
-                  </div>
-                )}
-              </CardContent>
-              </Card>
-            ))}
+                <Plus className="h-4 w-4 mr-1" />
+                Code
+              </Button>
+              <Button
+                onClick={() => addCell('markdown')}
+                variant="outline"
+                size="sm"
+              >
+                <Plus className="h-4 w-4 mr-1" />
+                Markdown
+              </Button>
+              <Button
+                onClick={() => setShowTerminal(!showTerminal)}
+                variant={showTerminal ? "default" : "outline"}
+                size="sm"
+                className={showTerminal ? "bg-[hsl(var(--pictoblox-purple))]" : ""}
+              >
+                <Terminal className="h-4 w-4 mr-1" />
+                Terminal
+              </Button>
+              <Button
+                onClick={() => setShowCanvas(!showCanvas)}
+                variant={showCanvas ? "default" : "outline"}
+                size="sm"
+                className={showCanvas ? "bg-[hsl(var(--pictoblox-blue))]" : ""}
+              >
+                <Palette className="h-4 w-4 mr-1" />
+                Canvas
+              </Button>
+              <Button
+                onClick={() => setShowSidebar(!showSidebar)}
+                variant={showSidebar ? "default" : "outline"}
+                size="sm"
+              >
+                <Layout className="h-4 w-4 mr-1" />
+                Files
+              </Button>
+              <div className="flex-1" />
+              <Badge variant="secondary" className="bg-green-100 text-green-700">
+                {cells.length} cells
+              </Badge>
+            </div>
           </div>
 
-          {/* Terminal Panel */}
-          {showTerminal && (
-            <div className="lg:sticky lg:top-6 h-fit">
-              <Card className="bg-gray-900 text-green-400 border-gray-700 max-h-96">
-                <CardHeader className="pb-2">
-                  <div className="flex justify-between items-center">
-                    <CardTitle className="text-lg flex items-center text-green-400">
-                      <Terminal className="h-4 w-4 mr-2" />
-                      Python Terminal
-                    </CardTitle>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setShowTerminal(false)}
-                      className="text-green-400 hover:text-green-300 hover:bg-gray-800"
-                    >
-                      <Minimize2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </CardHeader>
-                <CardContent className="pt-0">
-                  <div className="bg-black rounded-md p-3 font-mono text-sm h-64 overflow-y-auto mb-3">
-                    {terminalHistory.map((line, index) => (
-                      <div key={index} className={line.startsWith('>>>') ? 'text-blue-400' : 'text-green-400'}>
-                        {line}
+          {/* Main Content Layout */}
+          <div className="flex-1 overflow-hidden p-6">
+            <div className={`grid gap-6 h-full ${showTerminal || showCanvas ? 'grid-cols-1 lg:grid-cols-2' : 'grid-cols-1'}`}>
+              {/* Notebook Cells */}
+              <div className="space-y-4 overflow-y-auto">
+                {cells.map((cell, index) => (
+                  <Card
+                    key={cell.id}
+                    className={`border-2 transition-all duration-200 ${
+                      activeCell === cell.id 
+                        ? 'border-[hsl(var(--pictoblox-purple))] shadow-lg' 
+                        : 'border-gray-200 hover:border-gray-300'
+                    } bg-white/95 backdrop-blur-sm`}
+                    onClick={() => setActiveCell(cell.id)}
+                  >
+                    <CardHeader className="pb-2">
+                      <div className="flex justify-between items-center">
+                        <div className="flex items-center space-x-2">
+                          <Badge 
+                            variant={cell.type === 'code' ? 'default' : 'secondary'}
+                            className={cell.type === 'code' ? 'bg-[hsl(var(--pictoblox-blue))]' : ''}
+                          >
+                            {cell.type === 'code' ? 'Code' : 'Markdown'} [{index + 1}]
+                          </Badge>
+                          {cell.isExecuting && (
+                            <Badge variant="outline" className="text-orange-600 border-orange-300">
+                              Running...
+                            </Badge>
+                          )}
+                          {cell.executionTime && cell.executionTime > 0 && (
+                            <Badge variant="outline" className="text-blue-600 border-blue-300">
+                              <Clock className="h-3 w-3 mr-1" />
+                              {cell.executionTime.toFixed(0)}ms
+                            </Badge>
+                          )}
+                        </div>
+                        
+                        <div className="flex items-center space-x-2">
+                          {cell.type === 'code' && (
+                            <Button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                executeCell(cell.id);
+                              }}
+                              size="sm"
+                              variant="outline"
+                              disabled={cell.isExecuting}
+                              className="text-green-600 border-green-300 hover:bg-green-50"
+                            >
+                              <Play className="h-3 w-3 mr-1" />
+                              Run
+                            </Button>
+                          )}
+                          <Button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              deleteCell(cell.id);
+                            }}
+                            size="sm"
+                            variant="outline"
+                            className="text-red-600 border-red-300 hover:bg-red-50"
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </div>
                       </div>
-                    ))}
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <span className="text-blue-400">{'>>>'}</span>
-                    <Input
-                      value={terminalInput}
-                      onChange={(e) => setTerminalInput(e.target.value)}
-                      onKeyDown={handleTerminalKeyDown}
-                      placeholder="Type Python code here..."
-                      className="bg-gray-800 border-gray-600 text-green-400 font-mono text-sm"
+                    </CardHeader>
+                    
+                    <CardContent className="pt-0">
+                      <Textarea
+                        ref={(el) => (textareaRefs.current[cell.id] = el)}
+                        value={cell.content}
+                        onChange={(e) => updateCellContent(cell.id, e.target.value)}
+                        onKeyDown={(e) => handleKeyDown(e, cell.id)}
+                        placeholder={
+                          cell.type === 'code' 
+                            ? "# Write your Python code here...\n# Press Ctrl+Enter to run"
+                            : "Write your markdown here..."
+                        }
+                        className="min-h-24 font-mono text-sm resize-none border-0 focus:ring-0 bg-gray-50"
+                        style={{ 
+                          height: Math.max(96, cell.content.split('\n').length * 24 + 48) + 'px'
+                        }}
+                      />
+                      
+                      {/* Output for code cells */}
+                      {cell.type === 'code' && cell.output !== undefined && (
+                        <div className="mt-3 p-3 bg-gray-900 text-green-400 rounded-md font-mono text-sm">
+                          <div className="text-gray-500 text-xs mb-1">Output:</div>
+                          <pre className="whitespace-pre-wrap">
+                            {cell.output || '(no output)'}
+                          </pre>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+
+              {/* Right Panel */}
+              {(showTerminal || showCanvas) && (
+                <div className="flex flex-col gap-6 overflow-y-auto">
+                  {/* Terminal Panel */}
+                  {showTerminal && (
+                    <Card className="bg-gray-900 text-green-400 border-gray-700 max-h-96">
+                      <CardHeader className="pb-2">
+                        <div className="flex justify-between items-center">
+                          <CardTitle className="text-lg flex items-center text-green-400">
+                            <Terminal className="h-4 w-4 mr-2" />
+                            Python Terminal
+                          </CardTitle>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setShowTerminal(false)}
+                            className="text-green-400 hover:text-green-300 hover:bg-gray-800"
+                          >
+                            <Minimize2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="pt-0">
+                        <div className="bg-black rounded-md p-3 font-mono text-sm h-64 overflow-y-auto mb-3">
+                          {terminalHistory.map((line, index) => (
+                            <div key={index} className={line.startsWith('>>>') ? 'text-blue-400' : 'text-green-400'}>
+                              {line}
+                            </div>
+                          ))}
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <span className="text-blue-400">{'>>>'}</span>
+                          <Input
+                            value={terminalInput}
+                            onChange={(e) => setTerminalInput(e.target.value)}
+                            onKeyDown={handleTerminalKeyDown}
+                            placeholder="Type Python code here..."
+                            className="bg-gray-800 border-gray-600 text-green-400 font-mono text-sm"
+                          />
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
+
+                  {/* Canvas Panel */}
+                  {showCanvas && (
+                    <NotebookCanvas 
+                      isVisible={showCanvas} 
+                      onToggle={() => setShowCanvas(false)} 
                     />
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Help Section */}
+          {!showTerminal && !showCanvas && (
+            <div className="p-6">
+              <Card className="bg-blue-50 border-blue-200">
+                <CardHeader>
+                  <CardTitle className="text-blue-800">🐍 Python Notebook Guide</CardTitle>
+                </CardHeader>
+                <CardContent className="text-blue-700">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <h4 className="font-semibold mb-2">Keyboard Shortcuts:</h4>
+                      <ul className="space-y-1">
+                        <li>• <kbd className="bg-blue-200 px-1 rounded">Ctrl+Enter</kbd> - Run cell</li>
+                        <li>• Click cell to select/edit</li>
+                      </ul>
+                    </div>
+                    <div>
+                      <h4 className="font-semibold mb-2">Try These Examples:</h4>
+                      <ul className="space-y-1">
+                        <li>• <code>print("Hello World!")</code></li>
+                        <li>• <code>for i in range(5): print(i)</code></li>
+                        <li>• <code>import math</code></li>
+                      </ul>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
             </div>
           )}
         </div>
-
-        {/* Help Section */}
-        <Card className="mt-8 bg-blue-50 border-blue-200">
-          <CardHeader>
-            <CardTitle className="text-blue-800">🐍 Python Notebook Guide</CardTitle>
-          </CardHeader>
-          <CardContent className="text-blue-700">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-              <div>
-                <h4 className="font-semibold mb-2">Keyboard Shortcuts:</h4>
-                <ul className="space-y-1">
-                  <li>• <kbd className="bg-blue-200 px-1 rounded">Ctrl+Enter</kbd> - Run cell</li>
-                  <li>• Click cell to select/edit</li>
-                </ul>
-              </div>
-              <div>
-                <h4 className="font-semibold mb-2">Try These Examples:</h4>
-                <ul className="space-y-1">
-                  <li>• <code>print("Hello World!")</code></li>
-                  <li>• <code>for i in range(5): print(i)</code></li>
-                  <li>• <code>import math</code></li>
-                </ul>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
       </div>
     </div>
   );
