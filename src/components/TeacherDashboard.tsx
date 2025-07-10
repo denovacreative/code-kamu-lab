@@ -165,8 +165,7 @@ const TeacherDashboard = () => {
           id,
           submitted_at,
           status,
-          notebooks (title),
-          profiles!notebook_assignments_student_id_fkey (display_name)
+          notebooks (title)
         `)
         .eq('teacher_id', user?.id)
         .not('submitted_at', 'is', null)
@@ -179,7 +178,7 @@ const TeacherDashboard = () => {
         id: sub.id,
         type: 'submission',
         title: sub.notebooks?.title || 'Unknown Notebook',
-        student_name: sub.profiles?.display_name || 'Unknown Student',
+        student_name: 'Student',
         timestamp: sub.submitted_at!,
         status: sub.status
       }));

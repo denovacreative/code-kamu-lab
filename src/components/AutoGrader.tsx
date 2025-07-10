@@ -95,7 +95,7 @@ const AutoGrader = ({ notebookId, cellCount, onTestCasesChange }: AutoGraderProp
 
       if (error) throw error;
 
-      setTestCases([...testCases, data]);
+      setTestCases([...testCases, data as TestCase]);
       setShowAddForm(false);
       setNewTestCase({
         notebook_id: notebookId,
