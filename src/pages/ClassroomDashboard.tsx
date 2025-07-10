@@ -10,6 +10,7 @@ import ClassAssignments from '@/components/ClassAssignments';
 import ClassProgressDashboard from '@/components/ClassProgressDashboard';
 import ClassSettings from '@/components/ClassSettings';
 import ClassFileManager from '@/components/ClassFileManager';
+import Gradebook from '@/components/Gradebook';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -42,7 +43,7 @@ interface ClassData {
   member_count?: number;
 }
 
-type ViewMode = 'classes' | 'notebook' | 'monitoring' | 'profile' | 'chat' | 'assignments' | 'progress' | 'files' | 'settings';
+type ViewMode = 'classes' | 'notebook' | 'monitoring' | 'profile' | 'chat' | 'assignments' | 'progress' | 'files' | 'settings' | 'gradebook';
 
 const ClassroomDashboard = () => {
   const { user, signOut } = useAuth();
@@ -230,6 +231,24 @@ const ClassroomDashboard = () => {
           </div>
         );
       
+      case 'gradebook':
+        return selectedClass && userRole === 'teacher' ? (
+          <div className="p-6">
+            <Gradebook 
+              classId={selectedClass.id} 
+              className={selectedClass.name}
+              onBack={() => setCurrentView('notebook')}
+            />
+          </div>
+        ) : (
+          <div className="text-center py-12">
+            <p className="text-white">Access denied or no class selected</p>
+            <Button onClick={handleBackToClasses} className="mt-4 bg-white/20 text-white hover:bg-white/30">
+              Back to Classes
+            </Button>
+          </div>
+        );
+      
       default:
         return null;
     }
@@ -346,6 +365,16 @@ const ClassroomDashboard = () => {
                      >
                        <Monitor className="h-4 w-4 mr-2" />
                        Monitor
+                     </Button>
+                     
+                     <Button
+                       variant="ghost"
+                       size="sm"
+                       className={getNavButtonClassName('gradebook')}
+                       onClick={() => setCurrentView('gradebook')}
+                     >
+                       <GraduationCap className="h-4 w-4 mr-2" />
+                       Gradebook
                      </Button>
                      
                      <Button
