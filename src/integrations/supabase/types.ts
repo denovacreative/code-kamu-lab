@@ -143,6 +143,47 @@ export type Database = {
           },
         ]
       }
+      class_messages: {
+        Row: {
+          class_id: string
+          created_at: string
+          id: string
+          is_deleted: boolean
+          message: string
+          message_type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          class_id: string
+          created_at?: string
+          id?: string
+          is_deleted?: boolean
+          message: string
+          message_type?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          class_id?: string
+          created_at?: string
+          id?: string
+          is_deleted?: boolean
+          message?: string
+          message_type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "class_messages_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       class_sessions: {
         Row: {
           active_cell: string | null
