@@ -208,7 +208,7 @@ const LiveTerminal = ({ notebookId, isVisible, onToggle }: LiveTerminalProps) =>
           .update({
             last_activity: new Date().toISOString(),
             session_data: { 
-              messages: messages.concat([commandMessage, outputMessage]).slice(-50) // Keep last 50 messages
+              messages: messages.concat([commandMessage, outputMessage]).slice(-50) as any // Keep last 50 messages
             }
           })
           .eq('id', sessionId);
