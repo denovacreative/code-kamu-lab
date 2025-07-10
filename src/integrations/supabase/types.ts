@@ -70,6 +70,156 @@ export type Database = {
           },
         ]
       }
+      class_activities: {
+        Row: {
+          activity_type: string
+          cell_id: string | null
+          class_id: string
+          content: string | null
+          id: string
+          timestamp: string
+          user_id: string
+        }
+        Insert: {
+          activity_type: string
+          cell_id?: string | null
+          class_id: string
+          content?: string | null
+          id?: string
+          timestamp?: string
+          user_id: string
+        }
+        Update: {
+          activity_type?: string
+          cell_id?: string | null
+          class_id?: string
+          content?: string | null
+          id?: string
+          timestamp?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "class_activities_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      class_members: {
+        Row: {
+          class_id: string
+          id: string
+          is_active: boolean | null
+          joined_at: string
+          last_activity: string | null
+          student_id: string
+        }
+        Insert: {
+          class_id: string
+          id?: string
+          is_active?: boolean | null
+          joined_at?: string
+          last_activity?: string | null
+          student_id: string
+        }
+        Update: {
+          class_id?: string
+          id?: string
+          is_active?: boolean | null
+          joined_at?: string
+          last_activity?: string | null
+          student_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "class_members_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      class_sessions: {
+        Row: {
+          active_cell: string | null
+          class_id: string
+          cursor_position: Json | null
+          id: string
+          is_online: boolean | null
+          last_activity: string
+          session_data: Json | null
+          user_id: string
+        }
+        Insert: {
+          active_cell?: string | null
+          class_id: string
+          cursor_position?: Json | null
+          id?: string
+          is_online?: boolean | null
+          last_activity?: string
+          session_data?: Json | null
+          user_id: string
+        }
+        Update: {
+          active_cell?: string | null
+          class_id?: string
+          cursor_position?: Json | null
+          id?: string
+          is_online?: boolean | null
+          last_activity?: string
+          session_data?: Json | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "class_sessions_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      classes: {
+        Row: {
+          class_code: string
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          notebook_content: Json | null
+          teacher_id: string
+          updated_at: string
+        }
+        Insert: {
+          class_code: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          notebook_content?: Json | null
+          teacher_id: string
+          updated_at?: string
+        }
+        Update: {
+          class_code?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          notebook_content?: Json | null
+          teacher_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       notebook_assignments: {
         Row: {
           assigned_at: string
@@ -358,7 +508,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      generate_class_code: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
     }
     Enums: {
       [_ in never]: never
