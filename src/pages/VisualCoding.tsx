@@ -374,25 +374,32 @@ const VisualCoding = () => {
     setDraggedBlock(block);
   };
 
+  const handleDragEnd = () => {
+    setDraggedBlock(null);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "copy";
+  };
+
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
-    if (draggedBlock) {
-      const rect = scriptsAreaRef.current?.getBoundingClientRect();
-      if (rect) {
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
-        
-        const newBlock: DroppedBlock = {
-          ...draggedBlock,
-          type: draggedBlock.type,
-          color: BLOCK_CATEGORIES[draggedBlock.type].color,
-          id: `${draggedBlock.id}_${Date.now()}`,
-          scriptId: currentSprite.id,
-          position: { x, y }
-        };
-        
-        setDroppedBlocks(prev => [...prev, newBlock]);
-      }
+    if (draggedBlock && scriptsAreaRef.current) {
+      const rect = scriptsAreaRef.current.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      
+      const newBlock: DroppedBlock = {
+        ...draggedBlock,
+        type: draggedBlock.type,
+        color: BLOCK_CATEGORIES[draggedBlock.type].color,
+        id: `${draggedBlock.id}_${Date.now()}`,
+        scriptId: currentSprite.id,
+        position: { x, y }
+      };
+      
+      setDroppedBlocks(prev => [...prev, newBlock]);
       setDraggedBlock(null);
     }
   };
@@ -450,9 +457,14 @@ const VisualCoding = () => {
 
     return (
       <div
-        draggable
-        onDragStart={() => handleDragStart({ ...block, type: category, color: BLOCK_CATEGORIES[category].color })}
+        draggable={true}
+        onDragStart={(e) => {
+          e.dataTransfer.setData("text/plain", "");
+          handleDragStart({ ...block, type: category, color: BLOCK_CATEGORIES[category].color });
+        }}
+        onDragEnd={handleDragEnd}
         className={getBlockStyle(block.shape)}
+        style={{ userSelect: 'none' }}
       >
         {block.name}
       </div>
@@ -546,8 +558,8 @@ const VisualCoding = () => {
               
               <div
                 ref={scriptsAreaRef}
-                className="p-4 h-full"
-                onDragOver={(e) => e.preventDefault()}
+                className="p-4 h-full min-h-96 border-2 border-dashed border-gray-300 rounded-lg"
+                onDragOver={handleDragOver}
                 onDrop={handleDrop}
               >
                 {droppedBlocks.filter(block => block.scriptId === currentSprite.id).length === 0 ? (
