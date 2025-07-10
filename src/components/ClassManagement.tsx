@@ -90,8 +90,7 @@ const ClassManagement = ({ userRole, onJoinClass, onCreateClass }: ClassManageme
             class_id,
             classes (
               id, name, description, class_code, teacher_id, 
-              is_active, created_at,
-              profiles!classes_teacher_id_fkey (display_name)
+              notebook_content, is_active, created_at
             )
           `)
           .eq('student_id', user?.id)
@@ -164,7 +163,10 @@ const ClassManagement = ({ userRole, onJoinClass, onCreateClass }: ClassManageme
       setNewClassName('');
       setNewClassDescription('');
       loadClasses();
-      onCreateClass(data);
+      onCreateClass({
+        ...data,
+        notebook_content: Array.isArray(data.notebook_content) ? data.notebook_content : []
+      } as ClassData);
     } catch (error) {
       toast({
         title: "Error",
@@ -219,7 +221,10 @@ const ClassManagement = ({ userRole, onJoinClass, onCreateClass }: ClassManageme
           title: "Already Joined",
           description: "You are already a member of this class",
         });
-        onJoinClass(classData);
+        onJoinClass({
+          ...classData,
+          notebook_content: Array.isArray(classData.notebook_content) ? classData.notebook_content : []
+        } as ClassData);
         setShowJoinDialog(false);
         return;
       }
@@ -252,7 +257,10 @@ const ClassManagement = ({ userRole, onJoinClass, onCreateClass }: ClassManageme
       setShowJoinDialog(false);
       setJoinCode('');
       loadClasses();
-      onJoinClass(classData);
+      onJoinClass({
+        ...classData,
+        notebook_content: Array.isArray(classData.notebook_content) ? classData.notebook_content : []
+      } as ClassData);
     } catch (error) {
       toast({
         title: "Error",

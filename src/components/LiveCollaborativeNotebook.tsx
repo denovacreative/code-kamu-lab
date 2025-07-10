@@ -107,7 +107,7 @@ const LiveCollaborativeNotebook = ({
       if (error) throw error;
 
       if (classData?.notebook_content && Array.isArray(classData.notebook_content)) {
-        setCells(classData.notebook_content as NotebookCell[]);
+        setCells(Array.isArray(classData.notebook_content) ? (classData.notebook_content as unknown as NotebookCell[]) : []);
       }
 
       // Update user session

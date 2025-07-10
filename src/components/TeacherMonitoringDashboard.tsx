@@ -109,7 +109,7 @@ const TeacherMonitoringDashboard = ({ classId, className, onBack }: TeacherMonit
           return {
             id: member.id,
             student_id: member.student_id,
-            display_name: member.profiles?.display_name || 'Student',
+            display_name: (member.profiles as any)?.display_name || 'Student',
             email: member.student_id, // This should be fetched properly
             joined_at: member.joined_at,
             last_activity: member.last_activity,
@@ -152,7 +152,7 @@ const TeacherMonitoringDashboard = ({ classId, className, onBack }: TeacherMonit
 
       const activitiesWithNames = (data || []).map(activity => ({
         ...activity,
-        user_name: activity.profiles?.display_name || 'Unknown User'
+        user_name: (activity.profiles as any)?.display_name || 'Unknown User'
       }));
 
       setActivities(activitiesWithNames);
