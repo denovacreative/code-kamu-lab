@@ -445,7 +445,7 @@ const VisualCoding = () => {
           <div className="flex items-center space-x-4">
             <Button 
               variant="outline" 
-              onClick={() => navigate('/dashboard')}
+              onClick={() => navigate('/')}
               className="bg-white text-gray-800 border-gray-300 hover:bg-gray-100 font-medium"
             >
               <ArrowLeft className="h-4 w-4 mr-2" />
