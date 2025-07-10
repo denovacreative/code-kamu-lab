@@ -90,7 +90,7 @@ const ClassManagement = ({ userRole, onJoinClass, onCreateClass }: ClassManageme
             class_id,
             classes (
               id, name, description, class_code, teacher_id, 
-              notebook_content, is_active, created_at
+              notebook_content, is_active, is_open, created_at
             )
           `)
           .eq('student_id', user?.id)

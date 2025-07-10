@@ -26,6 +26,7 @@ interface Assignment {
   description: string;
   instructions: string;
   assignment_type: 'notebook' | 'file_upload' | 'code_editor';
+  start_date: string | null;
   due_date: string | null;
   max_score: number;
   allowed_file_types: string[];
@@ -48,6 +49,7 @@ const AssignmentEditor = ({ assignmentId, classId, onBack, onSave }: AssignmentE
     description: '',
     instructions: '',
     assignment_type: 'notebook',
+    start_date: null,
     due_date: null,
     max_score: 100,
     allowed_file_types: ['py', 'ipynb', 'txt'],
@@ -80,6 +82,7 @@ const AssignmentEditor = ({ assignmentId, classId, onBack, onSave }: AssignmentE
         description: data.description || '',
         instructions: data.instructions || '',
         assignment_type: (data.assignment_type as 'notebook' | 'file_upload' | 'code_editor') || 'notebook',
+        start_date: data.start_date ? new Date(data.start_date).toISOString().slice(0, 16) : null,
         due_date: data.due_date ? new Date(data.due_date).toISOString().slice(0, 16) : null,
         max_score: data.max_score || 100,
         allowed_file_types: data.allowed_file_types || ['py', 'ipynb', 'txt'],
@@ -118,6 +121,7 @@ const AssignmentEditor = ({ assignmentId, classId, onBack, onSave }: AssignmentE
         description: assignment.description.trim(),
         instructions: assignment.instructions.trim(),
         assignment_type: assignment.assignment_type,
+        start_date: assignment.start_date || null,
         due_date: assignment.due_date || null,
         max_score: assignment.max_score,
         allowed_file_types: assignment.allowed_file_types,
@@ -333,8 +337,20 @@ const AssignmentEditor = ({ assignmentId, classId, onBack, onSave }: AssignmentE
             />
           </div>
 
-          {/* Due Date and Score */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Start Date, Due Date and Score */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium flex items-center">
+                <Calendar className="h-4 w-4 mr-1" />
+                Start Date
+              </label>
+              <Input
+                type="datetime-local"
+                value={assignment.start_date || ''}
+                onChange={(e) => setAssignment(prev => ({ ...prev, start_date: e.target.value }))}
+              />
+            </div>
+            
             <div className="space-y-2">
               <label className="text-sm font-medium flex items-center">
                 <Calendar className="h-4 w-4 mr-1" />

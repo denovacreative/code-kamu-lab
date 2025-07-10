@@ -97,7 +97,7 @@ const TeacherMonitoringDashboard = ({ classId, className, onBack }: TeacherMonit
             .select('*')
             .eq('class_id', classId)
             .eq('user_id', member.student_id)
-            .single();
+            .maybeSingle();
 
           const { data: activityCount } = await supabase
             .from('class_activities')

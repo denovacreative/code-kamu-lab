@@ -133,6 +133,7 @@ export type Database = {
           instructions: string | null
           is_published: boolean
           max_score: number | null
+          start_date: string | null
           teacher_id: string
           title: string
           updated_at: string
@@ -149,6 +150,7 @@ export type Database = {
           instructions?: string | null
           is_published?: boolean
           max_score?: number | null
+          start_date?: string | null
           teacher_id: string
           title: string
           updated_at?: string
@@ -165,6 +167,7 @@ export type Database = {
           instructions?: string | null
           is_published?: boolean
           max_score?: number | null
+          start_date?: string | null
           teacher_id?: string
           title?: string
           updated_at?: string
@@ -341,6 +344,7 @@ export type Database = {
           description: string | null
           id: string
           is_active: boolean | null
+          is_open: boolean
           name: string
           notebook_content: Json | null
           teacher_id: string
@@ -352,6 +356,7 @@ export type Database = {
           description?: string | null
           id?: string
           is_active?: boolean | null
+          is_open?: boolean
           name: string
           notebook_content?: Json | null
           teacher_id: string
@@ -363,6 +368,7 @@ export type Database = {
           description?: string | null
           id?: string
           is_active?: boolean | null
+          is_open?: boolean
           name?: string
           notebook_content?: Json | null
           teacher_id?: string

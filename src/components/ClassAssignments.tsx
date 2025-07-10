@@ -117,7 +117,7 @@ const ClassAssignments = ({ classId, userRole, className = "" }: ClassAssignment
           .from('assignments')
           .select(`
             *,
-            assignment_student_submissions!left(
+            assignment_student_submissions!assignment_student_submissions_assignment_id_fkey(
               id,
               score,
               status,
@@ -126,12 +126,22 @@ const ClassAssignments = ({ classId, userRole, className = "" }: ClassAssignment
           `)
           .eq('class_id', classId)
           .eq('is_published', true)
-          .eq('assignment_student_submissions.student_id', user?.id)
           .order('created_at', { ascending: false });
 
         if (error) throw error;
 
-        const assignmentsWithSubmissions = assignmentsData?.map(assignment => ({
+        // Filter assignments to get user's submissions manually
+        const filteredAssignments = assignmentsData?.map(assignment => {
+          const userSubmission = assignment.assignment_student_submissions?.find(
+            (sub: any) => sub.student_id === user?.id
+          );
+          return {
+            ...assignment,
+            assignment_student_submissions: userSubmission ? [userSubmission] : []
+          };
+        }) || [];
+
+        const assignmentsWithSubmissions = filteredAssignments?.map(assignment => ({
           id: assignment.id,
           title: assignment.title || '',
           description: assignment.description || '',

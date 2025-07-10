@@ -8,6 +8,7 @@ import ProfileManagement from '@/components/ProfileManagement';
 import ClassChat from '@/components/ClassChat';
 import ClassAssignments from '@/components/ClassAssignments';
 import ClassProgressDashboard from '@/components/ClassProgressDashboard';
+import ClassFileManager from '@/components/ClassFileManager';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -22,7 +23,8 @@ import {
   ClipboardList,
   TrendingUp,
   Monitor,
-  ArrowLeft
+  ArrowLeft,
+  Folder
 } from 'lucide-react';
 
 interface ClassData {
@@ -37,7 +39,7 @@ interface ClassData {
   member_count?: number;
 }
 
-type ViewMode = 'classes' | 'notebook' | 'monitoring' | 'profile' | 'chat' | 'assignments' | 'progress';
+type ViewMode = 'classes' | 'notebook' | 'monitoring' | 'profile' | 'chat' | 'assignments' | 'progress' | 'files';
 
 const ClassroomDashboard = () => {
   const { user, signOut } = useAuth();
@@ -191,6 +193,20 @@ const ClassroomDashboard = () => {
           </div>
         );
       
+      case 'files':
+        return selectedClass ? (
+          <div className="p-6">
+            <ClassFileManager classId={selectedClass.id} className={selectedClass.name} userRole={userRole} />
+          </div>
+        ) : (
+          <div className="text-center py-12">
+            <p className="text-white">No class selected</p>
+            <Button onClick={handleBackToClasses} className="mt-4 bg-white/20 text-white hover:bg-white/30">
+              Back to Classes
+            </Button>
+          </div>
+        );
+      
       default:
         return null;
     }
@@ -285,6 +301,16 @@ const ClassroomDashboard = () => {
                  >
                    <TrendingUp className="h-4 w-4 mr-2" />
                    Progress
+                 </Button>
+                 
+                 <Button
+                   variant="ghost"
+                   size="sm"
+                   className={getNavButtonClassName('files')}
+                   onClick={() => setCurrentView('files')}
+                 >
+                   <Folder className="h-4 w-4 mr-2" />
+                   Files
                  </Button>
                  
                  {userRole === 'teacher' && (
