@@ -14,6 +14,62 @@ export type Database = {
   }
   public: {
     Tables: {
+      assignment_submissions: {
+        Row: {
+          assignment_id: string
+          auto_grade_feedback: Json | null
+          auto_grade_score: number | null
+          created_at: string
+          execution_results: Json | null
+          id: string
+          manual_feedback: string | null
+          manual_grade_score: number | null
+          status: string
+          student_id: string
+          submission_time: string
+          submitted_content: Json
+          updated_at: string
+        }
+        Insert: {
+          assignment_id: string
+          auto_grade_feedback?: Json | null
+          auto_grade_score?: number | null
+          created_at?: string
+          execution_results?: Json | null
+          id?: string
+          manual_feedback?: string | null
+          manual_grade_score?: number | null
+          status?: string
+          student_id: string
+          submission_time?: string
+          submitted_content?: Json
+          updated_at?: string
+        }
+        Update: {
+          assignment_id?: string
+          auto_grade_feedback?: Json | null
+          auto_grade_score?: number | null
+          created_at?: string
+          execution_results?: Json | null
+          id?: string
+          manual_feedback?: string | null
+          manual_grade_score?: number | null
+          status?: string
+          student_id?: string
+          submission_time?: string
+          submitted_content?: Json
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assignment_submissions_assignment_id_fkey"
+            columns: ["assignment_id"]
+            isOneToOne: false
+            referencedRelation: "notebook_assignments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notebook_assignments: {
         Row: {
           assigned_at: string
@@ -61,37 +117,128 @@ export type Database = {
           },
         ]
       }
+      notebook_collaborators: {
+        Row: {
+          accepted_at: string | null
+          id: string
+          invited_at: string
+          invited_by: string
+          notebook_id: string
+          permission: string
+          user_id: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          id?: string
+          invited_at?: string
+          invited_by: string
+          notebook_id: string
+          permission?: string
+          user_id: string
+        }
+        Update: {
+          accepted_at?: string | null
+          id?: string
+          invited_at?: string
+          invited_by?: string
+          notebook_id?: string
+          permission?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notebook_collaborators_notebook_id_fkey"
+            columns: ["notebook_id"]
+            isOneToOne: false
+            referencedRelation: "notebooks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notebook_test_cases: {
+        Row: {
+          cell_index: number
+          created_at: string
+          id: string
+          is_hidden: boolean
+          notebook_id: string
+          points: number
+          test_config: Json
+          test_type: string
+        }
+        Insert: {
+          cell_index: number
+          created_at?: string
+          id?: string
+          is_hidden?: boolean
+          notebook_id: string
+          points?: number
+          test_config: Json
+          test_type: string
+        }
+        Update: {
+          cell_index?: number
+          created_at?: string
+          id?: string
+          is_hidden?: boolean
+          notebook_id?: string
+          points?: number
+          test_config?: Json
+          test_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notebook_test_cases_notebook_id_fkey"
+            columns: ["notebook_id"]
+            isOneToOne: false
+            referencedRelation: "notebooks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notebooks: {
         Row: {
+          auto_grade_config: Json | null
           content: Json
           created_at: string
           created_by: string
           description: string | null
+          difficulty: string | null
+          estimated_time: number | null
           id: string
           is_shared: boolean | null
           is_template: boolean | null
+          tags: string[] | null
           title: string
           updated_at: string
         }
         Insert: {
+          auto_grade_config?: Json | null
           content?: Json
           created_at?: string
           created_by: string
           description?: string | null
+          difficulty?: string | null
+          estimated_time?: number | null
           id?: string
           is_shared?: boolean | null
           is_template?: boolean | null
+          tags?: string[] | null
           title: string
           updated_at?: string
         }
         Update: {
+          auto_grade_config?: Json | null
           content?: Json
           created_at?: string
           created_by?: string
           description?: string | null
+          difficulty?: string | null
+          estimated_time?: number | null
           id?: string
           is_shared?: boolean | null
           is_template?: boolean | null
+          tags?: string[] | null
           title?: string
           updated_at?: string
         }
@@ -126,6 +273,85 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      student_progress: {
+        Row: {
+          cells_completed: number
+          completion_percentage: number
+          id: string
+          last_accessed: string
+          notebook_id: string
+          student_id: string
+          time_spent: number
+          total_cells: number
+        }
+        Insert: {
+          cells_completed?: number
+          completion_percentage?: number
+          id?: string
+          last_accessed?: string
+          notebook_id: string
+          student_id: string
+          time_spent?: number
+          total_cells?: number
+        }
+        Update: {
+          cells_completed?: number
+          completion_percentage?: number
+          id?: string
+          last_accessed?: string
+          notebook_id?: string
+          student_id?: string
+          time_spent?: number
+          total_cells?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_progress_notebook_id_fkey"
+            columns: ["notebook_id"]
+            isOneToOne: false
+            referencedRelation: "notebooks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      terminal_sessions: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          last_activity: string
+          notebook_id: string | null
+          session_data: Json
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          last_activity?: string
+          notebook_id?: string | null
+          session_data?: Json
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          last_activity?: string
+          notebook_id?: string | null
+          session_data?: Json
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "terminal_sessions_notebook_id_fkey"
+            columns: ["notebook_id"]
+            isOneToOne: false
+            referencedRelation: "notebooks"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
