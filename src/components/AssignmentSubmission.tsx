@@ -298,6 +298,8 @@ const AssignmentSubmission = ({ assignment, onBack }: AssignmentSubmissionProps)
     setCodeOutput('Running...');
     
     try {
+      console.log('Executing Python code:', codeContent);
+      
       const response = await fetch('https://luhelfrgqqizufzbehh.supabase.co/functions/v1/python-compiler', {
         method: 'POST',
         headers: {
@@ -307,16 +309,35 @@ const AssignmentSubmission = ({ assignment, onBack }: AssignmentSubmissionProps)
         body: JSON.stringify({ code: codeContent })
       });
 
+      console.log('Response status:', response.status);
+      console.log('Response ok:', response.ok);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Response error:', errorText);
+        setCodeOutput(`Error: HTTP ${response.status} - ${errorText}`);
+        return;
+      }
+
       const result = await response.json();
+      console.log('Python execution result:', result);
       
       if (result.error) {
         setCodeOutput(`Error: ${result.error}`);
+      } else if (result.success === false) {
+        setCodeOutput(`Error: ${result.output || 'Execution failed'}`);
       } else {
         setCodeOutput(result.output || 'Code executed successfully (no output)');
       }
     } catch (error) {
       console.error('Error running Python code:', error);
-      setCodeOutput('Error: Failed to execute code. Please try again.');
+      if (error instanceof TypeError && error.message.includes('fetch')) {
+        setCodeOutput('Error: Network connection failed. Please check your internet connection.');
+      } else if (error instanceof SyntaxError) {
+        setCodeOutput('Error: Invalid response from server. Please try again.');
+      } else {
+        setCodeOutput(`Error: ${error.message || 'Failed to execute code. Please try again.'}`);
+      }
     } finally {
       setIsRunningCode(false);
     }
