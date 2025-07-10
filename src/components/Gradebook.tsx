@@ -197,7 +197,7 @@ const Gradebook = ({ classId, className, onBack }: GradebookProps) => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
-          <Button variant="ghost" onClick={onBack} className="text-white hover:bg-white/20">
+          <Button variant="outline" onClick={onBack} className="bg-white/10 border-white/20 text-white hover:bg-white/20">
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back
           </Button>
@@ -214,7 +214,7 @@ const Gradebook = ({ classId, className, onBack }: GradebookProps) => {
           <Badge variant="outline" className="text-white border-white/30">
             {assignments.length} assignment{assignments.length !== 1 ? 's' : ''}
           </Badge>
-          <Button variant="outline" onClick={exportGradebook} className="text-white border-white/30">
+          <Button variant="outline" onClick={exportGradebook} className="bg-white/10 border-white/20 text-white hover:bg-white/20">
             <Download className="h-4 w-4 mr-2" />
             Export CSV
           </Button>

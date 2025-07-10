@@ -166,7 +166,7 @@ const ClassSettings = ({ classId, className, isOpen, isActive, onBack }: ClassSe
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
-          <Button variant="ghost" onClick={onBack} className="text-white hover:bg-white/20">
+          <Button variant="outline" onClick={onBack} className="bg-white/10 border-white/20 text-white hover:bg-white/20">
             ← Back
           </Button>
           <h1 className="text-xl font-bold text-white flex items-center">
