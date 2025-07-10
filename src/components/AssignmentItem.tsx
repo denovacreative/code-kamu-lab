@@ -43,7 +43,7 @@ const AssignmentItem = ({
         <div className="flex items-start justify-between mb-2">
           <div className="flex-1 min-w-0">
             <div className="flex items-center space-x-2 mb-1">
-              <h4 className="font-medium text-gray-900 truncate">
+              <h4 className="font-medium text-foreground truncate">
                 {assignment.title}
               </h4>
               <Badge variant="outline" className="text-xs">
@@ -52,7 +52,7 @@ const AssignmentItem = ({
               </Badge>
             </div>
             {assignment.description && (
-              <p className="text-sm text-gray-600 mt-1 line-clamp-2">
+              <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
                 {assignment.description}
               </p>
             )}
@@ -76,7 +76,7 @@ const AssignmentItem = ({
           </div>
         </div>
         
-        <div className="flex items-center justify-between text-xs text-gray-500 mt-3">
+        <div className="flex items-center justify-between text-xs text-muted-foreground mt-3">
           <div className="flex items-center space-x-4">
             {assignment.due_date && (
               <span className="flex items-center">

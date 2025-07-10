@@ -70,6 +70,8 @@ const AssignmentSubmission = ({ assignment, onBack }: AssignmentSubmissionProps)
   });
   
   const [codeContent, setCodeContent] = useState('# Write your Python code here\nprint("Hello, World!")');
+  const [codeOutput, setCodeOutput] = useState('');
+  const [isRunningCode, setIsRunningCode] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -117,7 +119,7 @@ const AssignmentSubmission = ({ assignment, onBack }: AssignmentSubmissionProps)
         });
         
         // Load code content if it's a code assignment
-        if (assignment.assignment_type === 'code_editor' && data.submission_content?.[0]?.content) {
+        if ((assignment.assignment_type === 'code_editor' || assignment.assignment_type === 'notebook') && data.submission_content?.[0]?.content) {
           setCodeContent(data.submission_content[0].content);
         }
       }
@@ -232,7 +234,7 @@ const AssignmentSubmission = ({ assignment, onBack }: AssignmentSubmissionProps)
       
       let submissionContent = submission.submission_content;
       
-      if (assignment.assignment_type === 'code_editor') {
+      if (assignment.assignment_type === 'code_editor' || assignment.assignment_type === 'notebook') {
         submissionContent = [{
           type: 'code',
           content: codeContent,
@@ -288,6 +290,35 @@ const AssignmentSubmission = ({ assignment, onBack }: AssignmentSubmissionProps)
       });
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const runPythonCode = async () => {
+    setIsRunningCode(true);
+    setCodeOutput('Running...');
+    
+    try {
+      const response = await fetch('https://luhelfrgqqizufzbehh.supabase.co/functions/v1/python-compiler', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx1aGVsZnJncXF1aXpuZnhiZWhoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIwMzM3NzIsImV4cCI6MjA2NzYwOTc3Mn0.T_2ciRdYmu9Ev07wQgxhKpYIDSCgPeRcFsgT4jid8_c`
+        },
+        body: JSON.stringify({ code: codeContent })
+      });
+
+      const result = await response.json();
+      
+      if (result.error) {
+        setCodeOutput(`Error: ${result.error}`);
+      } else {
+        setCodeOutput(result.output || 'Code executed successfully (no output)');
+      }
+    } catch (error) {
+      console.error('Error running Python code:', error);
+      setCodeOutput('Error: Failed to execute code. Please try again.');
+    } finally {
+      setIsRunningCode(false);
     }
   };
 
@@ -418,9 +449,9 @@ const AssignmentSubmission = ({ assignment, onBack }: AssignmentSubmissionProps)
                   <Badge variant="outline" className="text-xs">
                     Auto-save: {isSaving ? 'Saving...' : 'Saved'}
                   </Badge>
-                  <Button size="sm" variant="outline" disabled={!canSubmit}>
+                  <Button size="sm" variant="outline" disabled={!canSubmit || isRunningCode} onClick={runPythonCode}>
                     <Play className="h-3 w-3 mr-1" />
-                    Run Cell
+                    {isRunningCode ? 'Running...' : 'Run Cell'}
                   </Button>
                 </div>
               </div>
@@ -446,9 +477,8 @@ const AssignmentSubmission = ({ assignment, onBack }: AssignmentSubmissionProps)
                 <div className="bg-gray-100 border-b px-3 py-2">
                   <span className="text-sm font-medium">Output</span>
                 </div>
-                <div className="p-3 min-h-20 font-mono text-sm text-gray-600">
-                  {/* Placeholder for code output */}
-                  <p className="italic">Run your code to see output here...</p>
+                <div className="p-3 min-h-20 font-mono text-sm text-gray-800 whitespace-pre-wrap">
+                  {codeOutput || <span className="italic text-gray-500">Run your code to see output here...</span>}
                 </div>
               </div>
             </div>
@@ -465,9 +495,9 @@ const AssignmentSubmission = ({ assignment, onBack }: AssignmentSubmissionProps)
                       Auto-saving...
                     </Badge>
                   )}
-                  <Button size="sm" variant="outline" disabled={!canSubmit}>
+                  <Button size="sm" variant="outline" disabled={!canSubmit || isRunningCode} onClick={runPythonCode}>
                     <Play className="h-3 w-3 mr-1" />
-                    Run Code
+                    {isRunningCode ? 'Running...' : 'Run Code'}
                   </Button>
                 </div>
               </div>

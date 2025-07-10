@@ -208,10 +208,10 @@ const Gradebook = ({ classId, className, onBack }: GradebookProps) => {
         </div>
         
         <div className="flex items-center space-x-4">
-          <Badge variant="outline" className="text-white border-white/30">
+          <Badge variant="outline" className="bg-white/10 border-white/20 text-white">
             {students.length} student{students.length !== 1 ? 's' : ''}
           </Badge>
-          <Badge variant="outline" className="text-white border-white/30">
+          <Badge variant="outline" className="bg-white/10 border-white/20 text-white">
             {assignments.length} assignment{assignments.length !== 1 ? 's' : ''}
           </Badge>
           <Button variant="outline" onClick={exportGradebook} className="bg-white/10 border-white/20 text-white hover:bg-white/20">
