@@ -8,6 +8,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import AssignmentEditor from './AssignmentEditor';
+import AssignmentSubmission from './AssignmentSubmission';
 import { 
   ClipboardList, 
   Plus, 
@@ -18,7 +20,11 @@ import {
   Edit,
   CheckCircle,
   AlertCircle,
-  Trophy
+  Trophy,
+  Upload,
+  Code,
+  BookOpen,
+  FileText
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -26,10 +32,14 @@ interface Assignment {
   id: string;
   title: string;
   description: string;
+  instructions: string;
+  assignment_type: 'notebook' | 'file_upload' | 'code_editor';
   due_date: string | null;
   max_score: number;
+  allowed_file_types: string[];
   is_published: boolean;
   created_at: string;
+  content: any[];
   submission_count?: number;
   my_submission?: {
     id: string;
@@ -45,15 +55,21 @@ interface ClassAssignmentsProps {
   className?: string;
 }
 
+type ViewMode = 'list' | 'editor' | 'submission';
+
 const ClassAssignments = ({ classId, userRole, className = "" }: ClassAssignmentsProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [currentView, setCurrentView] = useState<ViewMode>('list');
+  const [selectedAssignment, setSelectedAssignment] = useState<Assignment | null>(null);
+  const [editingAssignmentId, setEditingAssignmentId] = useState<string | null>(null);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [newAssignment, setNewAssignment] = useState({
     title: '',
     description: '',
+    assignment_type: 'notebook' as 'notebook' | 'file_upload' | 'code_editor',
     due_date: '',
     max_score: 100
   });
@@ -80,7 +96,17 @@ const ClassAssignments = ({ classId, userRole, className = "" }: ClassAssignment
         if (error) throw error;
 
         const assignmentsWithCounts = assignmentsData?.map(assignment => ({
-          ...assignment,
+          id: assignment.id,
+          title: assignment.title || '',
+          description: assignment.description || '',
+          instructions: assignment.instructions || '',
+          assignment_type: (assignment.assignment_type as 'notebook' | 'file_upload' | 'code_editor') || 'notebook',
+          due_date: assignment.due_date,
+          max_score: assignment.max_score || 100,
+          allowed_file_types: assignment.allowed_file_types || ['py', 'ipynb', 'txt'],
+          is_published: assignment.is_published || false,
+          created_at: assignment.created_at,
+          content: Array.isArray(assignment.content) ? assignment.content : [],
           submission_count: assignment.assignment_student_submissions?.[0]?.count || 0
         })) || [];
 
@@ -106,7 +132,17 @@ const ClassAssignments = ({ classId, userRole, className = "" }: ClassAssignment
         if (error) throw error;
 
         const assignmentsWithSubmissions = assignmentsData?.map(assignment => ({
-          ...assignment,
+          id: assignment.id,
+          title: assignment.title || '',
+          description: assignment.description || '',
+          instructions: assignment.instructions || '',
+          assignment_type: (assignment.assignment_type as 'notebook' | 'file_upload' | 'code_editor') || 'notebook',
+          due_date: assignment.due_date,
+          max_score: assignment.max_score || 100,
+          allowed_file_types: assignment.allowed_file_types || ['py', 'ipynb', 'txt'],
+          is_published: assignment.is_published || false,
+          created_at: assignment.created_at,
+          content: Array.isArray(assignment.content) ? assignment.content : [],
           my_submission: assignment.assignment_student_submissions?.[0] || null
         })) || [];
 
@@ -157,6 +193,7 @@ const ClassAssignments = ({ classId, userRole, className = "" }: ClassAssignment
       setNewAssignment({
         title: '',
         description: '',
+        assignment_type: 'notebook',
         due_date: '',
         max_score: 100
       });
@@ -227,6 +264,62 @@ const ClassAssignments = ({ classId, userRole, className = "" }: ClassAssignment
     return 'Active';
   };
 
+  // Handle view changes
+  const handleEditAssignment = (assignment: Assignment) => {
+    setEditingAssignmentId(assignment.id);
+    setCurrentView('editor');
+  };
+
+  const handleViewSubmission = (assignment: Assignment) => {
+    setSelectedAssignment(assignment);
+    setCurrentView('submission');
+  };
+
+  const handleBackToList = () => {
+    setCurrentView('list');
+    setSelectedAssignment(null);
+    setEditingAssignmentId(null);
+    fetchAssignments(); // Refresh the list
+  };
+
+  const getAssignmentTypeIcon = (type: string) => {
+    switch (type) {
+      case 'notebook': return <BookOpen className="h-4 w-4" />;
+      case 'file_upload': return <Upload className="h-4 w-4" />;
+      case 'code_editor': return <Code className="h-4 w-4" />;
+      default: return <FileText className="h-4 w-4" />;
+    }
+  };
+
+  const getAssignmentTypeLabel = (type: string) => {
+    switch (type) {
+      case 'notebook': return 'Notebook';
+      case 'file_upload': return 'File Upload';
+      case 'code_editor': return 'Code Editor';
+      default: return 'Assignment';
+    }
+  };
+
+  // Render different views
+  if (currentView === 'editor') {
+    return (
+      <AssignmentEditor
+        assignmentId={editingAssignmentId || undefined}
+        classId={classId}
+        onBack={handleBackToList}
+      />
+    );
+  }
+
+  if (currentView === 'submission' && selectedAssignment) {
+    return (
+      <AssignmentSubmission
+        assignment={selectedAssignment}
+        onBack={handleBackToList}
+      />
+    );
+  }
+
   if (isLoading) {
     return (
       <Card className={`h-full ${className}`}>
@@ -253,68 +346,17 @@ const ClassAssignments = ({ classId, userRole, className = "" }: ClassAssignment
           </CardTitle>
           
           {userRole === 'teacher' && (
-            <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-              <DialogTrigger asChild>
-                <Button size="sm" className="flex items-center">
-                  <Plus className="h-4 w-4 mr-1" />
-                  Create
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-md">
-                <DialogHeader>
-                  <DialogTitle>Create New Assignment</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4 pt-4">
-                  <div>
-                    <label className="text-sm font-medium">Title*</label>
-                    <Input
-                      value={newAssignment.title}
-                      onChange={(e) => setNewAssignment(prev => ({ ...prev, title: e.target.value }))}
-                      placeholder="Assignment title"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="text-sm font-medium">Description</label>
-                    <Textarea
-                      value={newAssignment.description}
-                      onChange={(e) => setNewAssignment(prev => ({ ...prev, description: e.target.value }))}
-                      placeholder="Assignment description"
-                      rows={3}
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="text-sm font-medium">Due Date</label>
-                    <Input
-                      type="datetime-local"
-                      value={newAssignment.due_date}
-                      onChange={(e) => setNewAssignment(prev => ({ ...prev, due_date: e.target.value }))}
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="text-sm font-medium">Max Score</label>
-                    <Input
-                      type="number"
-                      value={newAssignment.max_score}
-                      onChange={(e) => setNewAssignment(prev => ({ ...prev, max_score: parseInt(e.target.value) || 100 }))}
-                      min="1"
-                      max="1000"
-                    />
-                  </div>
-                  
-                  <div className="flex space-x-2 pt-4">
-                    <Button onClick={createAssignment} className="flex-1">
-                      Create Assignment
-                    </Button>
-                    <Button variant="outline" onClick={() => setShowCreateDialog(false)}>
-                      Cancel
-                    </Button>
-                  </div>
-                </div>
-              </DialogContent>
-            </Dialog>
+            <Button 
+              size="sm" 
+              className="flex items-center"
+              onClick={() => {
+                setEditingAssignmentId(null);
+                setCurrentView('editor');
+              }}
+            >
+              <Plus className="h-4 w-4 mr-1" />
+              Create
+            </Button>
           )}
         </div>
         
@@ -338,9 +380,15 @@ const ClassAssignments = ({ classId, userRole, className = "" }: ClassAssignment
               <CardContent className="p-4">
                 <div className="flex items-start justify-between mb-2">
                   <div className="flex-1 min-w-0">
-                    <h4 className="font-medium text-gray-900 truncate">
-                      {assignment.title}
-                    </h4>
+                    <div className="flex items-center space-x-2 mb-1">
+                      <h4 className="font-medium text-gray-900 truncate">
+                        {assignment.title}
+                      </h4>
+                      <Badge variant="outline" className="text-xs">
+                        {getAssignmentTypeIcon(assignment.assignment_type)}
+                        <span className="ml-1">{getAssignmentTypeLabel(assignment.assignment_type)}</span>
+                      </Badge>
+                    </div>
                     {assignment.description && (
                       <p className="text-sm text-gray-600 mt-1 line-clamp-2">
                         {assignment.description}
@@ -396,13 +444,34 @@ const ClassAssignments = ({ classId, userRole, className = "" }: ClassAssignment
                   </div>
                   
                   <div className="flex items-center space-x-1">
-                    <Button size="sm" variant="ghost" className="h-6 w-6 p-0">
-                      <Eye className="h-3 w-3" />
-                    </Button>
-                    {userRole === 'teacher' && (
-                      <Button size="sm" variant="ghost" className="h-6 w-6 p-0">
-                        <Edit className="h-3 w-3" />
+                    {userRole === 'student' ? (
+                      <Button 
+                        size="sm" 
+                        variant="ghost" 
+                        className="h-6 w-16 text-xs"
+                        onClick={() => handleViewSubmission(assignment)}
+                      >
+                        {assignment.my_submission ? 'View' : 'Submit'}
                       </Button>
+                    ) : (
+                      <>
+                        <Button 
+                          size="sm" 
+                          variant="ghost" 
+                          className="h-6 w-6 p-0"
+                          onClick={() => handleViewSubmission(assignment)}
+                        >
+                          <Eye className="h-3 w-3" />
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          variant="ghost" 
+                          className="h-6 w-6 p-0"
+                          onClick={() => handleEditAssignment(assignment)}
+                        >
+                          <Edit className="h-3 w-3" />
+                        </Button>
+                      </>
                     )}
                   </div>
                 </div>

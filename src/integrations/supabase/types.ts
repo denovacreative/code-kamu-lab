@@ -25,6 +25,7 @@ export type Database = {
           student_id: string
           submission_content: Json
           submitted_at: string
+          submitted_files: Json | null
           updated_at: string
         }
         Insert: {
@@ -37,6 +38,7 @@ export type Database = {
           student_id: string
           submission_content?: Json
           submitted_at?: string
+          submitted_files?: Json | null
           updated_at?: string
         }
         Update: {
@@ -49,6 +51,7 @@ export type Database = {
           student_id?: string
           submission_content?: Json
           submitted_at?: string
+          submitted_files?: Json | null
           updated_at?: string
         }
         Relationships: [
@@ -119,12 +122,15 @@ export type Database = {
       }
       assignments: {
         Row: {
+          allowed_file_types: string[] | null
+          assignment_type: string | null
           class_id: string
           content: Json
           created_at: string
           description: string | null
           due_date: string | null
           id: string
+          instructions: string | null
           is_published: boolean
           max_score: number | null
           teacher_id: string
@@ -132,12 +138,15 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          allowed_file_types?: string[] | null
+          assignment_type?: string | null
           class_id: string
           content?: Json
           created_at?: string
           description?: string | null
           due_date?: string | null
           id?: string
+          instructions?: string | null
           is_published?: boolean
           max_score?: number | null
           teacher_id: string
@@ -145,12 +154,15 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          allowed_file_types?: string[] | null
+          assignment_type?: string | null
           class_id?: string
           content?: Json
           created_at?: string
           description?: string | null
           due_date?: string | null
           id?: string
+          instructions?: string | null
           is_published?: boolean
           max_score?: number | null
           teacher_id?: string
