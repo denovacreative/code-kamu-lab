@@ -112,12 +112,12 @@ const ClassAssignments = ({ classId, userRole, className = "" }: ClassAssignment
 
         setAssignments(assignmentsWithCounts);
       } else {
-        // Student view - get published assignments with own submissions
+        // Student view - get published assignments with their submissions (if any)
         const { data: assignmentsData, error } = await supabase
           .from('assignments')
           .select(`
             *,
-            assignment_student_submissions!inner(
+            assignment_student_submissions!left(
               id,
               score,
               status,
