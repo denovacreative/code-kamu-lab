@@ -9,6 +9,7 @@ import Index from "./pages/Index";
 import Landing from "./pages/Landing";
 import AuthPage from "./pages/AuthPage";
 import PyNotebook from "./pages/PyNotebook";
+import ClassroomDashboard from "./pages/ClassroomDashboard";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -36,6 +37,14 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <PyNotebook />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/classroom" 
+              element={
+                <ProtectedRoute>
+                  <ClassroomDashboard />
                 </ProtectedRoute>
               } 
             />

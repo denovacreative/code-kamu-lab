@@ -10,7 +10,9 @@ import {
   Blocks,
   Laptop,
   LogOut,
-  User
+  User,
+  Users,
+  GraduationCap
 } from "lucide-react";
 
 const Dashboard = () => {
@@ -57,6 +59,14 @@ const Dashboard = () => {
           icon: FileText,
           color: "bg-pictoblox-orange",
           route: "/py-notebook"
+        },
+        {
+          title: "Classroom",
+          description: "Interactive classroom for teachers and students with real-time collaboration.",
+          age: "Ages 12+", 
+          icon: Users,
+          color: "bg-pictoblox-purple",
+          route: "/classroom"
         }
       ]
     }
@@ -91,14 +101,24 @@ const Dashboard = () => {
             <h2 className="text-lg font-medium">Welcome back!</h2>
             <p className="text-white/80">{user?.email}</p>
           </div>
-          <Button
-            variant="outline"
-            onClick={signOut}
-            className="bg-white/10 border-white/20 text-white hover:bg-white/20"
-          >
-            <LogOut className="h-4 w-4 mr-2" />
-            Sign Out
-          </Button>
+          <div className="flex items-center space-x-2">
+            <Button
+              variant="outline"
+              onClick={() => window.location.href = '/classroom'}
+              className="bg-white/10 border-white/20 text-white hover:bg-white/20"
+            >
+              <Users className="h-4 w-4 mr-2" />
+              Classroom
+            </Button>
+            <Button
+              variant="outline"
+              onClick={signOut}
+              className="bg-white/10 border-white/20 text-white hover:bg-white/20"
+            >
+              <LogOut className="h-4 w-4 mr-2" />
+              Sign Out
+            </Button>
+          </div>
         </div>
 
         {/* Main Question */}
@@ -140,7 +160,7 @@ const Dashboard = () => {
                       <Button 
                         className="w-full bg-[hsl(var(--pictoblox-purple))] hover:bg-[hsl(var(--pictoblox-purple-dark))] text-white"
                         onClick={() => {
-                          if (item.route === '/py-notebook') {
+                          if (item.route === '/py-notebook' || item.route === '/classroom') {
                             window.location.href = item.route;
                           } else {
                             console.log(`Navigate to ${item.route}`);
