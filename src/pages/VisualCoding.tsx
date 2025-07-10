@@ -399,10 +399,33 @@ const VisualCoding = () => {
 
   const runScript = () => {
     setIsRunning(true);
-    // Simulate script execution
+    
+    // Get blocks for current sprite
+    const spriteBlocks = droppedBlocks.filter(block => block.scriptId === currentSprite.id);
+    
+    // Simple execution simulation
+    spriteBlocks.forEach((block, index) => {
+      setTimeout(() => {
+        if (block.type === 'motion') {
+          // Animate sprite movement
+          setCurrentSprite(prev => {
+            const newSprite = { ...prev };
+            if (block.id.includes('move_steps')) {
+              newSprite.x += 20;
+            } else if (block.id.includes('turn_right')) {
+              newSprite.direction += 15;
+            } else if (block.id.includes('turn_left')) {
+              newSprite.direction -= 15;
+            }
+            return newSprite;
+          });
+        }
+      }, index * 500);
+    });
+    
     setTimeout(() => {
       setIsRunning(false);
-    }, 2000);
+    }, spriteBlocks.length * 500 + 1000);
   };
 
   const BlockComponent = ({ block, category }: { block: Block; category: keyof typeof BLOCK_CATEGORIES }) => {
