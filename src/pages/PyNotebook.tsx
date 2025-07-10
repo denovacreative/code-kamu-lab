@@ -2,8 +2,10 @@ import { useState, useRef, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 import { 
   Play, 
   Plus, 
@@ -12,7 +14,11 @@ import {
   FileText, 
   Home,
   User,
-  LogOut 
+  LogOut,
+  Terminal,
+  Clock,
+  Maximize2,
+  Minimize2
 } from 'lucide-react';
 
 interface NotebookCell {
@@ -20,11 +26,19 @@ interface NotebookCell {
   type: 'code' | 'markdown';
   content: string;
   output?: string;
+  executionTime?: number;
   isExecuting?: boolean;
 }
 
 const PyNotebook = () => {
   const { user, signOut } = useAuth();
+  const [showTerminal, setShowTerminal] = useState(false);
+  const [terminalInput, setTerminalInput] = useState('');
+  const [terminalHistory, setTerminalHistory] = useState<string[]>([
+    'Python 3.9.0 - Interactive Terminal',
+    'Type Python code below and press Enter to execute',
+    '>>> '
+  ]);
   const [cells, setCells] = useState<NotebookCell[]>([
     {
       id: '1',
@@ -36,39 +50,45 @@ const PyNotebook = () => {
   const [activeCell, setActiveCell] = useState<string | null>('1');
   const textareaRefs = useRef<{ [key: string]: HTMLTextAreaElement | null }>({});
 
-  // Dummy Python execution simulator
-  const executePythonCode = async (code: string): Promise<string> => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        try {
-          // Simple pattern matching for demo purposes
-          if (code.includes('print("Hello, Python!")')) {
-            resolve('Hello, Python!');
-          } else if (code.includes('2 + 2')) {
-            resolve('Hello, Python!\n2 + 2 = 4');
-          } else if (code.includes('import')) {
-            resolve('Module imported successfully');
-          } else if (code.includes('for') && code.includes('range')) {
-            resolve('0\n1\n2\n3\n4');
-          } else if (code.includes('def ')) {
-            resolve('Function defined successfully');
-          } else if (code.includes('print(')) {
-            const match = code.match(/print\(['"](.*?)['"]?\)/);
-            if (match) {
-              resolve(match[1]);
-            } else {
-              resolve('Output generated');
-            }
-          } else if (code.trim() === '') {
-            resolve('');
-          } else {
-            resolve('Code executed successfully');
-          }
-        } catch (error) {
-          resolve(`Error: ${error}`);
-        }
-      }, 1000);
-    });
+  // Online Python execution using Supabase Edge Function
+  const executePythonCode = async (code: string): Promise<{ output: string, executionTime: number }> => {
+    try {
+      const { data, error } = await supabase.functions.invoke('python-compiler', {
+        body: { code }
+      });
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      return {
+        output: data.output || data.error || 'No output',
+        executionTime: data.execution_time || 0
+      };
+    } catch (error) {
+      return {
+        output: `Error: ${error.message}`,
+        executionTime: 0
+      };
+    }
+  };
+
+  const executeTerminalCommand = async (command: string) => {
+    setTerminalHistory(prev => [...prev, `>>> ${command}`]);
+    
+    try {
+      const result = await executePythonCode(command);
+      setTerminalHistory(prev => [...prev, result.output, '>>> ']);
+    } catch (error) {
+      setTerminalHistory(prev => [...prev, `Error: ${error.message}`, '>>> ']);
+    }
+    setTerminalInput('');
+  };
+
+  const handleTerminalKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && terminalInput.trim()) {
+      executeTerminalCommand(terminalInput.trim());
+    }
   };
 
   const addCell = (type: 'code' | 'markdown' = 'code') => {
@@ -105,15 +125,21 @@ const PyNotebook = () => {
     ));
 
     try {
-      const output = await executePythonCode(cell.content);
+      const result = await executePythonCode(cell.content);
       setCells(cells.map(c => 
-        c.id === cellId ? { ...c, output, isExecuting: false } : c
+        c.id === cellId ? { 
+          ...c, 
+          output: result.output, 
+          executionTime: result.executionTime,
+          isExecuting: false 
+        } : c
       ));
     } catch (error) {
       setCells(cells.map(c => 
         c.id === cellId ? { 
           ...c, 
           output: `Error: ${error}`, 
+          executionTime: 0,
           isExecuting: false 
         } : c
       ));
@@ -192,6 +218,15 @@ const PyNotebook = () => {
               <Plus className="h-4 w-4 mr-1" />
               Markdown
             </Button>
+            <Button
+              onClick={() => setShowTerminal(!showTerminal)}
+              variant={showTerminal ? "default" : "outline"}
+              size="sm"
+              className={showTerminal ? "bg-[hsl(var(--pictoblox-purple))]" : ""}
+            >
+              <Terminal className="h-4 w-4 mr-1" />
+              Terminal
+            </Button>
             <div className="flex-1" />
             <Badge variant="secondary" className="bg-green-100 text-green-700">
               {cells.length} cells
@@ -199,18 +234,20 @@ const PyNotebook = () => {
           </div>
         </div>
 
-        {/* Notebook Cells */}
-        <div className="space-y-4">
-          {cells.map((cell, index) => (
-            <Card
-              key={cell.id}
-              className={`border-2 transition-all duration-200 ${
-                activeCell === cell.id 
-                  ? 'border-[hsl(var(--pictoblox-purple))] shadow-lg' 
-                  : 'border-gray-200 hover:border-gray-300'
-              } bg-white/95 backdrop-blur-sm`}
-              onClick={() => setActiveCell(cell.id)}
-            >
+        {/* Main Content Layout */}
+        <div className={`grid gap-6 ${showTerminal ? 'grid-cols-1 lg:grid-cols-2' : 'grid-cols-1'}`}>
+          {/* Notebook Cells */}
+          <div className="space-y-4">
+            {cells.map((cell, index) => (
+              <Card
+                key={cell.id}
+                className={`border-2 transition-all duration-200 ${
+                  activeCell === cell.id 
+                    ? 'border-[hsl(var(--pictoblox-purple))] shadow-lg' 
+                    : 'border-gray-200 hover:border-gray-300'
+                } bg-white/95 backdrop-blur-sm`}
+                onClick={() => setActiveCell(cell.id)}
+              >
               <CardHeader className="pb-2">
                 <div className="flex justify-between items-center">
                   <div className="flex items-center space-x-2">
@@ -223,6 +260,12 @@ const PyNotebook = () => {
                     {cell.isExecuting && (
                       <Badge variant="outline" className="text-orange-600 border-orange-300">
                         Running...
+                      </Badge>
+                    )}
+                    {cell.executionTime && cell.executionTime > 0 && (
+                      <Badge variant="outline" className="text-blue-600 border-blue-300">
+                        <Clock className="h-3 w-3 mr-1" />
+                        {cell.executionTime.toFixed(0)}ms
                       </Badge>
                     )}
                   </div>
@@ -285,8 +328,52 @@ const PyNotebook = () => {
                   </div>
                 )}
               </CardContent>
-            </Card>
-          ))}
+              </Card>
+            ))}
+          </div>
+
+          {/* Terminal Panel */}
+          {showTerminal && (
+            <div className="lg:sticky lg:top-6 h-fit">
+              <Card className="bg-gray-900 text-green-400 border-gray-700 max-h-96">
+                <CardHeader className="pb-2">
+                  <div className="flex justify-between items-center">
+                    <CardTitle className="text-lg flex items-center text-green-400">
+                      <Terminal className="h-4 w-4 mr-2" />
+                      Python Terminal
+                    </CardTitle>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setShowTerminal(false)}
+                      className="text-green-400 hover:text-green-300 hover:bg-gray-800"
+                    >
+                      <Minimize2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent className="pt-0">
+                  <div className="bg-black rounded-md p-3 font-mono text-sm h-64 overflow-y-auto mb-3">
+                    {terminalHistory.map((line, index) => (
+                      <div key={index} className={line.startsWith('>>>') ? 'text-blue-400' : 'text-green-400'}>
+                        {line}
+                      </div>
+                    ))}
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <span className="text-blue-400">{'>>>'}</span>
+                    <Input
+                      value={terminalInput}
+                      onChange={(e) => setTerminalInput(e.target.value)}
+                      onKeyDown={handleTerminalKeyDown}
+                      placeholder="Type Python code here..."
+                      className="bg-gray-800 border-gray-600 text-green-400 font-mono text-sm"
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
         </div>
 
         {/* Help Section */}

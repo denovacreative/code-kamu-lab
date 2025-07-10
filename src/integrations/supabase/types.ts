@@ -14,13 +14,96 @@ export type Database = {
   }
   public: {
     Tables: {
+      notebook_assignments: {
+        Row: {
+          assigned_at: string
+          grade: string | null
+          id: string
+          notebook_id: string
+          status: string
+          student_content: Json | null
+          student_id: string
+          submitted_at: string | null
+          teacher_feedback: string | null
+          teacher_id: string
+        }
+        Insert: {
+          assigned_at?: string
+          grade?: string | null
+          id?: string
+          notebook_id: string
+          status?: string
+          student_content?: Json | null
+          student_id: string
+          submitted_at?: string | null
+          teacher_feedback?: string | null
+          teacher_id: string
+        }
+        Update: {
+          assigned_at?: string
+          grade?: string | null
+          id?: string
+          notebook_id?: string
+          status?: string
+          student_content?: Json | null
+          student_id?: string
+          submitted_at?: string | null
+          teacher_feedback?: string | null
+          teacher_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notebook_assignments_notebook_id_fkey"
+            columns: ["notebook_id"]
+            isOneToOne: false
+            referencedRelation: "notebooks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notebooks: {
+        Row: {
+          content: Json
+          created_at: string
+          created_by: string
+          description: string | null
+          id: string
+          is_shared: boolean | null
+          is_template: boolean | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          content?: Json
+          created_at?: string
+          created_by: string
+          description?: string | null
+          id?: string
+          is_shared?: boolean | null
+          is_template?: boolean | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          content?: Json
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          id?: string
+          is_shared?: boolean | null
+          is_template?: boolean | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
           created_at: string
           display_name: string | null
           id: string
-          role: string | null
+          role: string
           updated_at: string
           user_id: string
         }
@@ -29,7 +112,7 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           id?: string
-          role?: string | null
+          role?: string
           updated_at?: string
           user_id: string
         }
@@ -38,7 +121,7 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           id?: string
-          role?: string | null
+          role?: string
           updated_at?: string
           user_id?: string
         }
