@@ -29,23 +29,11 @@ const AnimatedSprite = ({ sprite, isRunning }: { sprite: Sprite3D; isRunning: bo
       // Gentle floating animation when running
       meshRef.current.position.y = sprite.position[1] + Math.sin(state.clock.elapsedTime * 2) * 0.1;
       meshRef.current.rotation.y += 0.01;
-    } else if (meshRef.current) {
-      // Return to original position
-      meshRef.current.position.set(...sprite.position);
-      meshRef.current.rotation.set(...sprite.rotation);
     }
   });
 
   const handleClick = () => {
-    if (meshRef.current) {
-      // Add click animation
-      meshRef.current.scale.setScalar(sprite.scale * 1.2);
-      setTimeout(() => {
-        if (meshRef.current) {
-          meshRef.current.scale.setScalar(sprite.scale);
-        }
-      }, 200);
-    }
+    console.log('Sprite clicked:', sprite.id);
   };
 
   if (!sprite.visible) return null;
@@ -53,7 +41,7 @@ const AnimatedSprite = ({ sprite, isRunning }: { sprite: Sprite3D; isRunning: bo
   return (
     <group>
       {sprite.shape === 'box' && (
-        <Box
+        <mesh
           ref={meshRef}
           position={sprite.position}
           rotation={sprite.rotation}
@@ -62,16 +50,17 @@ const AnimatedSprite = ({ sprite, isRunning }: { sprite: Sprite3D; isRunning: bo
           onPointerOver={() => setHovered(true)}
           onPointerOut={() => setHovered(false)}
         >
+          <boxGeometry args={[1, 1, 1]} />
           <meshStandardMaterial 
             color={hovered ? '#ffaa00' : sprite.color} 
             transparent 
             opacity={0.8}
           />
-        </Box>
+        </mesh>
       )}
       
       {sprite.shape === 'sphere' && (
-        <Sphere
+        <mesh
           ref={meshRef}
           position={sprite.position}
           rotation={sprite.rotation}
@@ -80,17 +69,17 @@ const AnimatedSprite = ({ sprite, isRunning }: { sprite: Sprite3D; isRunning: bo
           onPointerOver={() => setHovered(true)}
           onPointerOut={() => setHovered(false)}
         >
+          <sphereGeometry args={[1, 32, 32]} />
           <meshStandardMaterial 
             color={hovered ? '#ffaa00' : sprite.color} 
             transparent 
             opacity={0.8}
           />
-        </Sphere>
+        </mesh>
       )}
       
       {sprite.shape === 'text' && sprite.text && (
         <Text
-          ref={meshRef as any}
           position={sprite.position}
           rotation={sprite.rotation}
           scale={sprite.scale}
