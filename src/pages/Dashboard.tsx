@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
+import { useToast } from "@/hooks/use-toast";
 import { 
   Code, 
   FileText, 
@@ -19,6 +20,7 @@ import {
 const Dashboard = () => {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
+  const { toast } = useToast();
   const features = [
     // Block Coding Section
     {
@@ -173,7 +175,11 @@ const Dashboard = () => {
                           if (item.route === '/py-notebook' || item.route === '/classroom' || item.route === '/visual-coding') {
                             navigate(item.route);
                           } else {
-                            console.log(`Navigate to ${item.route}`);
+                            console.log(`Navigate to ${item.route} - Coming Soon!`);
+                            toast({
+                              title: "Coming Soon",
+                              description: `${item.title} feature is coming soon!`,
+                            });
                           }
                         }}
                       >
@@ -217,7 +223,13 @@ const Dashboard = () => {
                   
                   <Button 
                     className="w-full bg-[hsl(var(--pictoblox-purple))] hover:bg-[hsl(var(--pictoblox-purple-dark))] text-white"
-                    onClick={() => console.log(`Navigate to ${item.route}`)}
+                    onClick={() => {
+                      console.log(`Navigate to ${item.route} - Coming Soon!`);
+                      toast({
+                        title: "Coming Soon",
+                        description: `${item.title} feature is coming soon!`,
+                      });
+                    }}
                   >
                     Get Started
                   </Button>

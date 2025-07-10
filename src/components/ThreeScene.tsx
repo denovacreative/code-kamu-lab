@@ -1,7 +1,8 @@
-import { useRef, useEffect, useState, Suspense } from 'react';
-import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { OrbitControls, Text, Box, Sphere, Plane } from '@react-three/drei';
+import { useRef, useState, Suspense } from 'react';
+import { Canvas, useFrame } from '@react-three/fiber';
+import { OrbitControls, Text } from '@react-three/drei';
 import * as THREE from 'three';
+import ErrorBoundary from './ErrorBoundary';
 
 interface Sprite3D {
   id: string;
@@ -100,9 +101,10 @@ const GridHelper = () => {
   return (
     <group>
       <gridHelper args={[20, 20, '#444444', '#222222']} />
-      <Plane args={[20, 20]} rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.01, 0]}>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.01, 0]}>
+        <planeGeometry args={[20, 20]} />
         <meshBasicMaterial color="#1a1a1a" transparent opacity={0.3} />
-      </Plane>
+      </mesh>
     </group>
   );
 };
@@ -110,56 +112,66 @@ const GridHelper = () => {
 const ThreeScene = ({ sprites, isRunning, onSpriteClick }: ThreeSceneProps) => {
   return (
     <div className="w-full h-full bg-gradient-to-b from-gray-900 to-gray-700 relative">
-      <Suspense fallback={
-        <div className="w-full h-full flex items-center justify-center text-white">
+      <ErrorBoundary fallback={
+        <div className="w-full h-full flex items-center justify-center text-white bg-gray-800">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto mb-2"></div>
-            <p>Loading 3D Scene...</p>
+            <div className="text-4xl mb-4">🎮</div>
+            <p className="text-lg mb-2">3D Scene Error</p>
+            <p className="text-sm text-gray-300">The 3D visualization is temporarily unavailable</p>
           </div>
         </div>
       }>
-        <Canvas
-          camera={{ position: [5, 5, 5], fov: 75 }}
-          className="w-full h-full"
-          gl={{ antialias: true }}
-          onCreated={({ gl }) => {
-            gl.setSize(window.innerWidth, window.innerHeight);
-          }}
-        >
-          {/* Lighting */}
-          <ambientLight intensity={0.6} />
-          <directionalLight 
-            position={[10, 10, 5]} 
-            intensity={1}
-            castShadow
-          />
-          <pointLight position={[-10, -10, -10]} intensity={0.3} />
-
-          {/* Scene Elements */}
-          <GridHelper />
-          
-          {/* Sprites */}
-          {sprites.map((sprite) => (
-            <AnimatedSprite 
-              key={sprite.id} 
-              sprite={sprite} 
-              isRunning={isRunning}
+        <Suspense fallback={
+          <div className="w-full h-full flex items-center justify-center text-white">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto mb-2"></div>
+              <p>Loading 3D Scene...</p>
+            </div>
+          </div>
+        }>
+          <Canvas
+            camera={{ position: [5, 5, 5], fov: 75 }}
+            className="w-full h-full"
+            gl={{ antialias: true }}
+            onCreated={({ gl }) => {
+              gl.setSize(window.innerWidth, window.innerHeight);
+            }}
+          >
+            {/* Lighting */}
+            <ambientLight intensity={0.6} />
+            <directionalLight 
+              position={[10, 10, 5]} 
+              intensity={1}
+              castShadow
             />
-          ))}
+            <pointLight position={[-10, -10, -10]} intensity={0.3} />
 
-          {/* Controls */}
-          <OrbitControls 
-            enablePan={true}
-            enableZoom={true}
-            enableRotate={true}
-            minDistance={3}
-            maxDistance={20}
-          />
+            {/* Scene Elements */}
+            <GridHelper />
+            
+            {/* Sprites */}
+            {sprites.map((sprite) => (
+              <AnimatedSprite 
+                key={sprite.id} 
+                sprite={sprite} 
+                isRunning={isRunning}
+              />
+            ))}
 
-          {/* Background */}
-          <color attach="background" args={['#0a0a0a']} />
-        </Canvas>
-      </Suspense>
+            {/* Controls */}
+            <OrbitControls 
+              enablePan={true}
+              enableZoom={true}
+              enableRotate={true}
+              minDistance={3}
+              maxDistance={20}
+            />
+
+            {/* Background */}
+            <color attach="background" args={['#0a0a0a']} />
+          </Canvas>
+        </Suspense>
+      </ErrorBoundary>
       
       {/* UI Overlay */}
       <div className="absolute top-4 left-4 text-white text-sm bg-black/50 p-2 rounded">

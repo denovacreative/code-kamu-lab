@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import NotebookSidebar from '@/components/NotebookSidebar';
 import NotebookCanvas from '@/components/NotebookCanvas';
@@ -42,6 +43,7 @@ interface NotebookCell {
 const PyNotebook = () => {
   const { user, signOut } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [showTerminal, setShowTerminal] = useState(false);
   const [showCanvas, setShowCanvas] = useState(false);
   const [showSidebar, setShowSidebar] = useState(true);
@@ -283,7 +285,7 @@ const PyNotebook = () => {
               variant="ghost"
               size="sm"
               className="text-white hover:bg-white/20"
-              onClick={() => window.history.back()}
+              onClick={() => navigate('/')}
             >
               <Home className="h-4 w-4 mr-2" />
               Back to Dashboard
