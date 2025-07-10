@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/contexts/AuthContext';
+import ThreeScene from '@/components/ThreeScene';
 import { 
   Play, 
   Square, 
@@ -18,7 +19,9 @@ import {
   Zap,
   Flag,
   Trash2,
-  Copy
+  Copy,
+  Box,
+  Circle
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -32,14 +35,15 @@ interface Block {
   parameters?: { name: string; type: 'number' | 'text' | 'dropdown'; value?: any; options?: string[] }[];
 }
 
-interface Sprite {
+interface Sprite3D {
   id: string;
   name: string;
-  x: number;
-  y: number;
-  direction: number;
-  costume: string;
-  size: number;
+  position: [number, number, number];
+  rotation: [number, number, number];
+  scale: number;
+  color: string;
+  shape: 'box' | 'sphere' | 'text';
+  text?: string;
   visible: boolean;
   scripts: Block[][];
 }
@@ -280,95 +284,28 @@ const BLOCK_CATEGORIES = {
 const VisualCoding = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const canvasRef = useRef<HTMLCanvasElement>(null);
   const scriptsAreaRef = useRef<HTMLDivElement>(null);
   
   const [selectedCategory, setSelectedCategory] = useState<keyof typeof BLOCK_CATEGORIES>('events');
-  const [currentSprite, setCurrentSprite] = useState<Sprite>({
+  const [currentSprite, setCurrentSprite] = useState<Sprite3D>({
     id: 'sprite1',
-    name: 'Cat',
-    x: 240,
-    y: 180,
-    direction: 90,
-    costume: '🐱',
-    size: 100,
+    name: 'Blue Cube',
+    position: [0, 1, 0],
+    rotation: [0, 0, 0],
+    scale: 1,
+    color: '#4CAF50',
+    shape: 'box',
     visible: true,
     scripts: []
   });
   
-  const [sprites, setSprites] = useState<Sprite[]>([currentSprite]);
+  const [sprites, setSprites] = useState<Sprite3D[]>([currentSprite]);
   const [droppedBlocks, setDroppedBlocks] = useState<DroppedBlock[]>([]);
   const [isRunning, setIsRunning] = useState(false);
   const [draggedBlock, setDraggedBlock] = useState<Block | null>(null);
-  const [projectName, setProjectName] = useState('Untitled Project');
+  const [projectName, setProjectName] = useState('3D Scratch Project');
 
-  useEffect(() => {
-    drawStage();
-  }, [currentSprite, sprites]);
-
-  const drawStage = () => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    // Clear canvas with white background
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-    // Draw subtle grid
-    ctx.strokeStyle = '#f5f5f5';
-    ctx.lineWidth = 1;
-    for (let x = 0; x <= canvas.width; x += 20) {
-      ctx.beginPath();
-      ctx.moveTo(x, 0);
-      ctx.lineTo(x, canvas.height);
-      ctx.stroke();
-    }
-    for (let y = 0; y <= canvas.height; y += 20) {
-      ctx.beginPath();
-      ctx.moveTo(0, y);
-      ctx.lineTo(canvas.width, y);
-      ctx.stroke();
-    }
-
-    // Draw center crosshair
-    ctx.strokeStyle = '#e0e0e0';
-    ctx.lineWidth = 1;
-    ctx.setLineDash([5, 5]);
-    ctx.beginPath();
-    ctx.moveTo(canvas.width / 2, 0);
-    ctx.lineTo(canvas.width / 2, canvas.height);
-    ctx.moveTo(0, canvas.height / 2);
-    ctx.lineTo(canvas.width, canvas.height / 2);
-    ctx.stroke();
-    ctx.setLineDash([]);
-
-    // Draw sprites
-    sprites.forEach(sprite => {
-      if (sprite.visible) {
-        ctx.save();
-        ctx.translate(sprite.x, sprite.y);
-        ctx.rotate((sprite.direction - 90) * Math.PI / 180);
-        
-        ctx.font = `${sprite.size / 2}px Arial`;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillStyle = '#000';
-        ctx.fillText(sprite.costume, 0, 0);
-        
-        // Highlight current sprite
-        if (sprite.id === currentSprite.id) {
-          ctx.strokeStyle = '#4CAF50';
-          ctx.lineWidth = 3;
-          ctx.strokeRect(-30, -30, 60, 60);
-        }
-        
-        ctx.restore();
-      }
-    });
-  };
+  // Three.js scene handles rendering, no need for canvas drawing
 
   const handleDragStart = (block: Block) => {
     setDraggedBlock(block);
@@ -410,29 +347,58 @@ const VisualCoding = () => {
     // Get blocks for current sprite
     const spriteBlocks = droppedBlocks.filter(block => block.scriptId === currentSprite.id);
     
-    // Simple execution simulation
+    // Animate sprite in 3D space
     spriteBlocks.forEach((block, index) => {
       setTimeout(() => {
         if (block.type === 'motion') {
-          // Animate sprite movement
           setCurrentSprite(prev => {
             const newSprite = { ...prev };
             if (block.id.includes('move_steps')) {
-              newSprite.x += 20;
+              newSprite.position = [
+                newSprite.position[0] + 1,
+                newSprite.position[1],
+                newSprite.position[2]
+              ];
             } else if (block.id.includes('turn_right')) {
-              newSprite.direction += 15;
+              newSprite.rotation = [
+                newSprite.rotation[0],
+                newSprite.rotation[1] + Math.PI / 12,
+                newSprite.rotation[2]
+              ];
             } else if (block.id.includes('turn_left')) {
-              newSprite.direction -= 15;
+              newSprite.rotation = [
+                newSprite.rotation[0],
+                newSprite.rotation[1] - Math.PI / 12,
+                newSprite.rotation[2]
+              ];
+            } else if (block.id.includes('goto_xy')) {
+              newSprite.position = [0, 1, 0];
             }
             return newSprite;
           });
+          
+          // Update sprites array
+          setSprites(prev => prev.map(sprite => 
+            sprite.id === currentSprite.id ? { ...sprite, ...currentSprite } : sprite
+          ));
+        } else if (block.type === 'looks') {
+          if (block.id.includes('change_size')) {
+            setCurrentSprite(prev => ({
+              ...prev,
+              scale: Math.max(0.5, Math.min(3, prev.scale + 0.2))
+            }));
+          } else if (block.id.includes('show')) {
+            setCurrentSprite(prev => ({ ...prev, visible: true }));
+          } else if (block.id.includes('hide')) {
+            setCurrentSprite(prev => ({ ...prev, visible: false }));
+          }
         }
-      }, index * 500);
+      }, index * 800);
     });
     
     setTimeout(() => {
       setIsRunning(false);
-    }, spriteBlocks.length * 500 + 1000);
+    }, spriteBlocks.length * 800 + 1000);
   };
 
   const BlockComponent = ({ block, category }: { block: Block; category: keyof typeof BLOCK_CATEGORIES }) => {
@@ -598,43 +564,36 @@ const VisualCoding = () => {
             </div>
           </div>
 
-          {/* Stage Area */}
-          <div className="w-96 bg-white border-l">
-            <div className="p-4 border-b">
+          {/* Stage Area with Three.js */}
+          <div className="w-96 bg-gray-900 border-l">
+            <div className="p-4 border-b border-gray-700">
               <div className="flex items-center justify-between">
-                <h3 className="font-semibold text-lg">Stage</h3>
+                <h3 className="font-semibold text-lg text-white">3D Stage</h3>
                 <div className="flex space-x-2">
-                  <Button size="sm" variant="outline">
+                  <Button size="sm" variant="outline" className="text-white border-gray-600">
                     <Upload className="h-4 w-4" />
                   </Button>
-                  <Button size="sm" variant="outline">
+                  <Button size="sm" variant="outline" className="text-white border-gray-600">
                     <Download className="h-4 w-4" />
                   </Button>
                 </div>
               </div>
             </div>
             
-            <div className="p-4">
-              <canvas
-                ref={canvasRef}
-                width={360}
-                height={270}
-                className="border border-gray-300 rounded bg-white cursor-crosshair"
-                onClick={(e) => {
-                  const rect = canvasRef.current?.getBoundingClientRect();
-                  if (rect) {
-                    const x = e.clientX - rect.left;
-                    const y = e.clientY - rect.top;
-                    setCurrentSprite(prev => ({ ...prev, x, y }));
-                    setSprites(prev => prev.map(s => s.id === currentSprite.id ? { ...s, x, y } : s));
-                  }
+            <div className="h-80">
+              <ThreeScene 
+                sprites={sprites}
+                isRunning={isRunning}
+                onSpriteClick={(spriteId) => {
+                  const sprite = sprites.find(s => s.id === spriteId);
+                  if (sprite) setCurrentSprite(sprite);
                 }}
               />
             </div>
 
             {/* Sprites List */}
-            <div className="p-4 border-t">
-              <h4 className="font-semibold mb-3">Sprites</h4>
+            <div className="p-4 border-t border-gray-700">
+              <h4 className="font-semibold mb-3 text-white">3D Sprites</h4>
               <div className="space-y-2">
                 {sprites.map((sprite) => (
                   <div
@@ -642,41 +601,68 @@ const VisualCoding = () => {
                     onClick={() => setCurrentSprite(sprite)}
                     className={`flex items-center p-3 rounded-lg cursor-pointer transition-colors ${
                       sprite.id === currentSprite.id 
-                        ? 'bg-blue-100 border-2 border-blue-500' 
-                        : 'bg-gray-100 hover:bg-gray-200'
+                        ? 'bg-blue-600 border-2 border-blue-400' 
+                        : 'bg-gray-700 hover:bg-gray-600'
                     }`}
                   >
-                    <span className="text-2xl mr-3">{sprite.costume}</span>
+                     <div className="w-8 h-8 rounded mr-3 flex items-center justify-center text-white" style={{ backgroundColor: sprite.color }}>
+                       {sprite.shape === 'box' ? <Box className="h-4 w-4" /> : <Circle className="h-4 w-4" />}
+                    </div>
                     <div>
-                      <div className="font-medium">{sprite.name}</div>
-                      <div className="text-sm text-gray-500">
-                        x: {sprite.x} y: {sprite.y}
+                      <div className="font-medium text-white">{sprite.name}</div>
+                      <div className="text-sm text-gray-300">
+                        x: {sprite.position[0].toFixed(1)} y: {sprite.position[1].toFixed(1)} z: {sprite.position[2].toFixed(1)}
                       </div>
                     </div>
                   </div>
                 ))}
               </div>
               
-              <Button 
-                className="w-full mt-3"
-                variant="outline"
-                onClick={() => {
-                  const newSprite: Sprite = {
-                    id: `sprite${sprites.length + 1}`,
-                    name: `Sprite${sprites.length + 1}`,
-                    x: 180,
-                    y: 135,
-                    direction: 90,
-                    costume: '🐶',
-                    size: 100,
-                    visible: true,
-                    scripts: []
-                  };
-                  setSprites(prev => [...prev, newSprite]);
-                }}
-              >
-                Add Sprite
-              </Button>
+              <div className="flex space-x-2 mt-3">
+                <Button 
+                  className="flex-1"
+                  variant="outline"
+                  onClick={() => {
+                    const newSprite: Sprite3D = {
+                      id: `sprite${sprites.length + 1}`,
+                      name: `Cube ${sprites.length + 1}`,
+                      position: [Math.random() * 4 - 2, 1, Math.random() * 4 - 2],
+                      rotation: [0, 0, 0],
+                      scale: 1,
+                      color: `hsl(${Math.random() * 360}, 70%, 50%)`,
+                      shape: 'box',
+                      visible: true,
+                      scripts: []
+                    };
+                    setSprites(prev => [...prev, newSprite]);
+                  }}
+                 >
+                   <Box className="h-4 w-4 mr-1" />
+                   Add Cube
+                </Button>
+                
+                <Button 
+                  className="flex-1"
+                  variant="outline"
+                  onClick={() => {
+                    const newSprite: Sprite3D = {
+                      id: `sprite${sprites.length + 1}`,
+                      name: `Sphere ${sprites.length + 1}`,
+                      position: [Math.random() * 4 - 2, 1, Math.random() * 4 - 2],
+                      rotation: [0, 0, 0],
+                      scale: 1,
+                      color: `hsl(${Math.random() * 360}, 70%, 50%)`,
+                      shape: 'sphere',
+                      visible: true,
+                      scripts: []
+                    };
+                    setSprites(prev => [...prev, newSprite]);
+                  }}
+                 >
+                   <Circle className="h-4 w-4 mr-1" />
+                   Add Sphere
+                </Button>
+              </div>
             </div>
           </div>
         </div>
