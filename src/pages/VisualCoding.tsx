@@ -15,7 +15,10 @@ import {
   Palette,
   Mouse,
   Volume2,
-  Zap
+  Zap,
+  Flag,
+  Trash2,
+  Copy
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -25,7 +28,8 @@ interface Block {
   name: string;
   code: string;
   color: string;
-  parameters?: { name: string; type: 'number' | 'text' | 'dropdown'; options?: string[] }[];
+  shape: 'hat' | 'stack' | 'boolean' | 'reporter' | 'cap';
+  parameters?: { name: string; type: 'number' | 'text' | 'dropdown'; value?: any; options?: string[] }[];
 }
 
 interface Sprite {
@@ -37,18 +41,84 @@ interface Sprite {
   costume: string;
   size: number;
   visible: boolean;
+  scripts: Block[][];
+}
+
+interface DroppedBlock extends Block {
+  scriptId: string;
+  position: { x: number; y: number };
+  connectedTo?: string;
 }
 
 const BLOCK_CATEGORIES = {
+  events: {
+    name: 'Events',
+    color: 'bg-amber-500',
+    icon: Flag,
+    blocks: [
+      { 
+        id: 'when_flag_clicked', 
+        name: 'when 🏴 clicked', 
+        code: 'whenFlagClicked()', 
+        shape: 'hat' as const,
+        parameters: []
+      },
+      { 
+        id: 'when_key_pressed', 
+        name: 'when [SPACE] key pressed', 
+        code: 'whenKeyPressed("space")', 
+        shape: 'hat' as const,
+        parameters: [{ name: 'key', type: 'dropdown' as const, value: 'space', options: ['space', 'up arrow', 'down arrow', 'left arrow', 'right arrow', 'a', 'b', 'c'] }] 
+      },
+      { 
+        id: 'when_clicked', 
+        name: 'when this sprite clicked', 
+        code: 'whenClicked()', 
+        shape: 'hat' as const,
+        parameters: []
+      },
+    ]
+  },
   motion: {
     name: 'Motion',
     color: 'bg-blue-500',
     icon: Mouse,
     blocks: [
-      { id: 'move_steps', name: 'move 10 steps', code: 'move(10)', parameters: [{ name: 'steps', type: 'number' as const }] },
-      { id: 'turn_right', name: 'turn ↻ 15 degrees', code: 'turn(15)', parameters: [{ name: 'degrees', type: 'number' as const }] },
-      { id: 'turn_left', name: 'turn ↺ 15 degrees', code: 'turn(-15)', parameters: [{ name: 'degrees', type: 'number' as const }] },
-      { id: 'goto_xy', name: 'go to x: 0 y: 0', code: 'goto(0, 0)', parameters: [{ name: 'x', type: 'number' as const }, { name: 'y', type: 'number' as const }] },
+      { 
+        id: 'move_steps', 
+        name: 'move [10] steps', 
+        code: 'move(10)', 
+        shape: 'stack' as const,
+        parameters: [{ name: 'steps', type: 'number' as const, value: 10 }] 
+      },
+      { 
+        id: 'turn_right', 
+        name: 'turn ↻ [15] degrees', 
+        code: 'turn(15)', 
+        shape: 'stack' as const,
+        parameters: [{ name: 'degrees', type: 'number' as const, value: 15 }] 
+      },
+      { 
+        id: 'turn_left', 
+        name: 'turn ↺ [15] degrees', 
+        code: 'turn(-15)', 
+        shape: 'stack' as const,
+        parameters: [{ name: 'degrees', type: 'number' as const, value: 15 }] 
+      },
+      { 
+        id: 'goto_xy', 
+        name: 'go to x: [0] y: [0]', 
+        code: 'goto(0, 0)', 
+        shape: 'stack' as const,
+        parameters: [{ name: 'x', type: 'number' as const, value: 0 }, { name: 'y', type: 'number' as const, value: 0 }] 
+      },
+      { 
+        id: 'point_direction', 
+        name: 'point in direction [90]', 
+        code: 'pointInDirection(90)', 
+        shape: 'stack' as const,
+        parameters: [{ name: 'direction', type: 'number' as const, value: 90 }] 
+      },
     ]
   },
   looks: {
@@ -56,10 +126,48 @@ const BLOCK_CATEGORIES = {
     color: 'bg-purple-500',
     icon: Palette,
     blocks: [
-      { id: 'say', name: 'say Hello! for 2 seconds', code: 'say("Hello!", 2)', parameters: [{ name: 'message', type: 'text' as const }, { name: 'seconds', type: 'number' as const }] },
-      { id: 'think', name: 'think Hmm... for 2 seconds', code: 'think("Hmm...", 2)', parameters: [{ name: 'message', type: 'text' as const }, { name: 'seconds', type: 'number' as const }] },
-      { id: 'show', name: 'show', code: 'show()' },
-      { id: 'hide', name: 'hide', code: 'hide()' },
+      { 
+        id: 'say', 
+        name: 'say [Hello!] for [2] seconds', 
+        code: 'say("Hello!", 2)', 
+        shape: 'stack' as const,
+        parameters: [{ name: 'message', type: 'text' as const, value: 'Hello!' }, { name: 'seconds', type: 'number' as const, value: 2 }] 
+      },
+      { 
+        id: 'say_forever', 
+        name: 'say [Hello!]', 
+        code: 'say("Hello!")', 
+        shape: 'stack' as const,
+        parameters: [{ name: 'message', type: 'text' as const, value: 'Hello!' }] 
+      },
+      { 
+        id: 'think', 
+        name: 'think [Hmm...] for [2] seconds', 
+        code: 'think("Hmm...", 2)', 
+        shape: 'stack' as const,
+        parameters: [{ name: 'message', type: 'text' as const, value: 'Hmm...' }, { name: 'seconds', type: 'number' as const, value: 2 }] 
+      },
+      { 
+        id: 'show', 
+        name: 'show', 
+        code: 'show()', 
+        shape: 'stack' as const,
+        parameters: []
+      },
+      { 
+        id: 'hide', 
+        name: 'hide', 
+        code: 'hide()', 
+        shape: 'stack' as const,
+        parameters: []
+      },
+      { 
+        id: 'change_size', 
+        name: 'change size by [10]', 
+        code: 'changeSizeBy(10)', 
+        shape: 'stack' as const,
+        parameters: [{ name: 'change', type: 'number' as const, value: 10 }] 
+      },
     ]
   },
   sound: {
@@ -67,18 +175,27 @@ const BLOCK_CATEGORIES = {
     color: 'bg-pink-500',
     icon: Volume2,
     blocks: [
-      { id: 'play_sound', name: 'play sound Meow', code: 'playSound("Meow")', parameters: [{ name: 'sound', type: 'dropdown' as const, options: ['Meow', 'Bark', 'Chirp'] }] },
-      { id: 'stop_sounds', name: 'stop all sounds', code: 'stopAllSounds()' },
-    ]
-  },
-  events: {
-    name: 'Events',
-    color: 'bg-yellow-500',
-    icon: Zap,
-    blocks: [
-      { id: 'when_flag_clicked', name: 'when 🏴 clicked', code: 'whenFlagClicked()' },
-      { id: 'when_key_pressed', name: 'when space key pressed', code: 'whenKeyPressed("space")', parameters: [{ name: 'key', type: 'dropdown' as const, options: ['space', 'up arrow', 'down arrow', 'left arrow', 'right arrow'] }] },
-      { id: 'when_clicked', name: 'when this sprite clicked', code: 'whenClicked()' },
+      { 
+        id: 'play_sound', 
+        name: 'play sound [Meow]', 
+        code: 'playSound("Meow")', 
+        shape: 'stack' as const,
+        parameters: [{ name: 'sound', type: 'dropdown' as const, value: 'Meow', options: ['Meow', 'Bark', 'Chirp', 'Pop', 'Beep'] }] 
+      },
+      { 
+        id: 'stop_sounds', 
+        name: 'stop all sounds', 
+        code: 'stopAllSounds()', 
+        shape: 'stack' as const,
+        parameters: []
+      },
+      { 
+        id: 'change_volume', 
+        name: 'change volume by [10]', 
+        code: 'changeVolumeBy(10)', 
+        shape: 'stack' as const,
+        parameters: [{ name: 'change', type: 'number' as const, value: 10 }] 
+      },
     ]
   },
   control: {
@@ -86,10 +203,76 @@ const BLOCK_CATEGORIES = {
     color: 'bg-orange-500',
     icon: RotateCcw,
     blocks: [
-      { id: 'wait', name: 'wait 1 seconds', code: 'wait(1)', parameters: [{ name: 'seconds', type: 'number' as const }] },
-      { id: 'repeat', name: 'repeat 10', code: 'repeat(10) {', parameters: [{ name: 'times', type: 'number' as const }] },
-      { id: 'forever', name: 'forever', code: 'forever() {' },
-      { id: 'if', name: 'if <> then', code: 'if (condition) {' },
+      { 
+        id: 'wait', 
+        name: 'wait [1] seconds', 
+        code: 'wait(1)', 
+        shape: 'stack' as const,
+        parameters: [{ name: 'seconds', type: 'number' as const, value: 1 }] 
+      },
+      { 
+        id: 'repeat', 
+        name: 'repeat [10]', 
+        code: 'repeat(10) {', 
+        shape: 'stack' as const,
+        parameters: [{ name: 'times', type: 'number' as const, value: 10 }] 
+      },
+      { 
+        id: 'forever', 
+        name: 'forever', 
+        code: 'forever() {', 
+        shape: 'cap' as const,
+        parameters: []
+      },
+      { 
+        id: 'if', 
+        name: 'if <> then', 
+        code: 'if (condition) {', 
+        shape: 'stack' as const,
+        parameters: []
+      },
+      { 
+        id: 'stop_all', 
+        name: 'stop all', 
+        code: 'stopAll()', 
+        shape: 'cap' as const,
+        parameters: []
+      },
+    ]
+  },
+  sensing: {
+    name: 'Sensing',
+    color: 'bg-cyan-500',
+    icon: Zap,
+    blocks: [
+      { 
+        id: 'touching', 
+        name: 'touching [mouse-pointer]?', 
+        code: 'touching("mouse-pointer")', 
+        shape: 'boolean' as const,
+        parameters: [{ name: 'object', type: 'dropdown' as const, value: 'mouse-pointer', options: ['mouse-pointer', 'edge', 'Sprite1'] }] 
+      },
+      { 
+        id: 'key_pressed', 
+        name: 'key [space] pressed?', 
+        code: 'keyPressed("space")', 
+        shape: 'boolean' as const,
+        parameters: [{ name: 'key', type: 'dropdown' as const, value: 'space', options: ['space', 'up arrow', 'down arrow', 'left arrow', 'right arrow'] }] 
+      },
+      { 
+        id: 'mouse_x', 
+        name: 'mouse x', 
+        code: 'mouseX()', 
+        shape: 'reporter' as const,
+        parameters: []
+      },
+      { 
+        id: 'mouse_y', 
+        name: 'mouse y', 
+        code: 'mouseY()', 
+        shape: 'reporter' as const,
+        parameters: []
+      },
     ]
   }
 };
@@ -98,8 +281,9 @@ const VisualCoding = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const scriptsAreaRef = useRef<HTMLDivElement>(null);
   
-  const [selectedCategory, setSelectedCategory] = useState<keyof typeof BLOCK_CATEGORIES>('motion');
+  const [selectedCategory, setSelectedCategory] = useState<keyof typeof BLOCK_CATEGORIES>('events');
   const [currentSprite, setCurrentSprite] = useState<Sprite>({
     id: 'sprite1',
     name: 'Cat',
@@ -108,13 +292,15 @@ const VisualCoding = () => {
     direction: 90,
     costume: '🐱',
     size: 100,
-    visible: true
+    visible: true,
+    scripts: []
   });
   
   const [sprites, setSprites] = useState<Sprite[]>([currentSprite]);
-  const [scripts, setScripts] = useState<Block[]>([]);
+  const [droppedBlocks, setDroppedBlocks] = useState<DroppedBlock[]>([]);
   const [isRunning, setIsRunning] = useState(false);
   const [draggedBlock, setDraggedBlock] = useState<Block | null>(null);
+  const [projectName, setProjectName] = useState('Untitled Project');
 
   useEffect(() => {
     drawStage();
@@ -127,12 +313,12 @@ const VisualCoding = () => {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // Clear canvas
+    // Clear canvas with white background
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // Draw grid
-    ctx.strokeStyle = '#f0f0f0';
+    // Draw subtle grid
+    ctx.strokeStyle = '#f5f5f5';
     ctx.lineWidth = 1;
     for (let x = 0; x <= canvas.width; x += 20) {
       ctx.beginPath();
@@ -147,20 +333,39 @@ const VisualCoding = () => {
       ctx.stroke();
     }
 
+    // Draw center crosshair
+    ctx.strokeStyle = '#e0e0e0';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([5, 5]);
+    ctx.beginPath();
+    ctx.moveTo(canvas.width / 2, 0);
+    ctx.lineTo(canvas.width / 2, canvas.height);
+    ctx.moveTo(0, canvas.height / 2);
+    ctx.lineTo(canvas.width, canvas.height / 2);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
     // Draw sprites
     sprites.forEach(sprite => {
       if (sprite.visible) {
+        ctx.save();
+        ctx.translate(sprite.x, sprite.y);
+        ctx.rotate((sprite.direction - 90) * Math.PI / 180);
+        
         ctx.font = `${sprite.size / 2}px Arial`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText(sprite.costume, sprite.x, sprite.y);
+        ctx.fillStyle = '#000';
+        ctx.fillText(sprite.costume, 0, 0);
         
         // Highlight current sprite
         if (sprite.id === currentSprite.id) {
           ctx.strokeStyle = '#4CAF50';
           ctx.lineWidth = 3;
-          ctx.strokeRect(sprite.x - 30, sprite.y - 30, 60, 60);
+          ctx.strokeRect(-30, -30, 60, 60);
         }
+        
+        ctx.restore();
       }
     });
   };
@@ -172,7 +377,22 @@ const VisualCoding = () => {
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     if (draggedBlock) {
-      setScripts(prev => [...prev, { ...draggedBlock, id: `${draggedBlock.id}_${Date.now()}` }]);
+      const rect = scriptsAreaRef.current?.getBoundingClientRect();
+      if (rect) {
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        
+        const newBlock: DroppedBlock = {
+          ...draggedBlock,
+          type: draggedBlock.type,
+          color: BLOCK_CATEGORIES[draggedBlock.type].color,
+          id: `${draggedBlock.id}_${Date.now()}`,
+          scriptId: currentSprite.id,
+          position: { x, y }
+        };
+        
+        setDroppedBlocks(prev => [...prev, newBlock]);
+      }
       setDraggedBlock(null);
     }
   };
@@ -185,15 +405,36 @@ const VisualCoding = () => {
     }, 2000);
   };
 
-  const BlockComponent = ({ block, category }: { block: Block; category: keyof typeof BLOCK_CATEGORIES }) => (
-    <div
-      draggable
-      onDragStart={() => handleDragStart({ ...block, type: category, color: BLOCK_CATEGORIES[category].color })}
-      className={`${BLOCK_CATEGORIES[category].color} text-white p-3 rounded-lg cursor-grab hover:opacity-80 transition-opacity text-sm font-medium`}
-    >
-      {block.name}
-    </div>
-  );
+  const BlockComponent = ({ block, category }: { block: Block; category: keyof typeof BLOCK_CATEGORIES }) => {
+    const getBlockStyle = (shape: string) => {
+      const baseClasses = `${BLOCK_CATEGORIES[category].color} text-white p-3 cursor-grab hover:opacity-80 transition-opacity text-sm font-medium shadow-md`;
+      
+      switch (shape) {
+        case 'hat':
+          return `${baseClasses} rounded-t-xl rounded-b-lg border-b-4 border-opacity-50`;
+        case 'stack':
+          return `${baseClasses} rounded-lg border-b-2 border-opacity-30`;
+        case 'boolean':
+          return `${baseClasses} rounded-full`;
+        case 'reporter':
+          return `${baseClasses} rounded-full bg-opacity-80`;
+        case 'cap':
+          return `${baseClasses} rounded-lg rounded-b-xl border-t-2 border-opacity-30`;
+        default:
+          return `${baseClasses} rounded-lg`;
+      }
+    };
+
+    return (
+      <div
+        draggable
+        onDragStart={() => handleDragStart({ ...block, type: category, color: BLOCK_CATEGORIES[category].color })}
+        className={getBlockStyle(block.shape)}
+      >
+        {block.name}
+      </div>
+    );
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-muted">
@@ -281,23 +522,39 @@ const VisualCoding = () => {
               </div>
               
               <div
+                ref={scriptsAreaRef}
                 className="p-4 h-full"
                 onDragOver={(e) => e.preventDefault()}
                 onDrop={handleDrop}
               >
-                {scripts.length === 0 ? (
+                {droppedBlocks.filter(block => block.scriptId === currentSprite.id).length === 0 ? (
                   <div className="text-center text-gray-500 py-8">
                     <div className="text-4xl mb-4">🧩</div>
                     <p>Drag blocks here to build your script</p>
+                    <p className="text-sm mt-2">Start with an Events block (yellow) like "when 🏴 clicked"</p>
                   </div>
                 ) : (
                   <div className="space-y-2">
-                    {scripts.map((script, index) => (
+                    {droppedBlocks
+                      .filter(block => block.scriptId === currentSprite.id)
+                      .map((block, index) => (
                       <div
-                        key={script.id}
-                        className={`${script.color} text-white p-3 rounded-lg text-sm font-medium`}
+                        key={block.id}
+                        className={`${block.color} text-white p-3 rounded-lg text-sm font-medium cursor-pointer hover:opacity-80 flex items-center justify-between`}
+                        style={{ 
+                          marginLeft: block.shape === 'hat' ? '0px' : '20px',
+                          borderRadius: block.shape === 'boolean' ? '20px' : '8px'
+                        }}
                       >
-                        {script.name}
+                        <span>{block.name}</span>
+                        <Button 
+                          size="sm" 
+                          variant="ghost" 
+                          className="text-white hover:bg-white/20 p-1 h-6 w-6"
+                          onClick={() => setDroppedBlocks(prev => prev.filter(b => b.id !== block.id))}
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
                       </div>
                     ))}
                   </div>
@@ -377,7 +634,8 @@ const VisualCoding = () => {
                     direction: 90,
                     costume: '🐶',
                     size: 100,
-                    visible: true
+                    visible: true,
+                    scripts: []
                   };
                   setSprites(prev => [...prev, newSprite]);
                 }}
