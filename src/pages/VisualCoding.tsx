@@ -453,7 +453,7 @@ const VisualCoding = () => {
             </Button>
             <h1 className="text-2xl font-bold text-white">Visual Coding Studio</h1>
             <Badge variant="outline" className="bg-white/10 border-white/20 text-white">
-              Scratch-like Interface
+              3D Scratch-like Interface
             </Badge>
           </div>
           
