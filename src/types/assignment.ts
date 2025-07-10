@@ -25,4 +25,4 @@ export interface ClassAssignmentsProps {
   className?: string;
 }
 
-export type ViewMode = 'list' | 'editor' | 'submission';
+export type ViewMode = 'list' | 'editor' | 'submission' | 'grading';

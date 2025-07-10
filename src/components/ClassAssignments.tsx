@@ -7,12 +7,14 @@ import { useAssignments } from '@/hooks/useAssignments';
 import AssignmentEditor from './AssignmentEditor';
 import AssignmentSubmission from './AssignmentSubmission';
 import AssignmentItem from './AssignmentItem';
+import AssignmentGrading from './AssignmentGrading';
 
 const ClassAssignments = ({ classId, userRole, className = "" }: ClassAssignmentsProps) => {
   const { assignments, isLoading, fetchAssignments, togglePublishAssignment } = useAssignments(classId, userRole);
   const [currentView, setCurrentView] = useState<ViewMode>('list');
   const [selectedAssignment, setSelectedAssignment] = useState<Assignment | null>(null);
   const [editingAssignmentId, setEditingAssignmentId] = useState<string | null>(null);
+  const [gradingAssignment, setGradingAssignment] = useState<Assignment | null>(null);
 
   // Handle view changes
   const handleEditAssignment = (assignment: Assignment) => {
@@ -25,10 +27,16 @@ const ClassAssignments = ({ classId, userRole, className = "" }: ClassAssignment
     setCurrentView('submission');
   };
 
+  const handleGradeAssignment = (assignment: Assignment) => {
+    setGradingAssignment(assignment);
+    setCurrentView('grading');
+  };
+
   const handleBackToList = () => {
     setCurrentView('list');
     setSelectedAssignment(null);
     setEditingAssignmentId(null);
+    setGradingAssignment(null);
     fetchAssignments(); // Refresh the list
   };
 
@@ -47,6 +55,15 @@ const ClassAssignments = ({ classId, userRole, className = "" }: ClassAssignment
     return (
       <AssignmentSubmission
         assignment={selectedAssignment}
+        onBack={handleBackToList}
+      />
+    );
+  }
+
+  if (currentView === 'grading' && gradingAssignment) {
+    return (
+      <AssignmentGrading
+        assignment={gradingAssignment}
         onBack={handleBackToList}
       />
     );
@@ -114,6 +131,7 @@ const ClassAssignments = ({ classId, userRole, className = "" }: ClassAssignment
               userRole={userRole}
               onEdit={handleEditAssignment}
               onView={handleViewSubmission}
+              onGrade={handleGradeAssignment}
               onTogglePublish={togglePublishAssignment}
             />
           ))

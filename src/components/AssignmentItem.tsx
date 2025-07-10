@@ -23,6 +23,7 @@ interface AssignmentItemProps {
   userRole: 'teacher' | 'student';
   onEdit: (assignment: Assignment) => void;
   onView: (assignment: Assignment) => void;
+  onGrade?: (assignment: Assignment) => void;
   onTogglePublish: (assignmentId: string, currentStatus: boolean) => void;
 }
 
@@ -31,6 +32,7 @@ const AssignmentItem = ({
   userRole, 
   onEdit, 
   onView, 
+  onGrade,
   onTogglePublish 
 }: AssignmentItemProps) => {
   const TypeIcon = getAssignmentTypeIcon(assignment.assignment_type);
@@ -123,6 +125,16 @@ const AssignmentItem = ({
                 >
                   <Eye className="h-3 w-3" />
                 </Button>
+                {onGrade && assignment.submission_count && assignment.submission_count > 0 && (
+                  <Button 
+                    size="sm" 
+                    variant="ghost" 
+                    className="h-6 w-8 p-0 text-xs"
+                    onClick={() => onGrade(assignment)}
+                  >
+                    Grade
+                  </Button>
+                )}
                 <Button 
                   size="sm" 
                   variant="ghost" 

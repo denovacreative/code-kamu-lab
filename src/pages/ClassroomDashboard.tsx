@@ -8,6 +8,7 @@ import ProfileManagement from '@/components/ProfileManagement';
 import ClassChat from '@/components/ClassChat';
 import ClassAssignments from '@/components/ClassAssignments';
 import ClassProgressDashboard from '@/components/ClassProgressDashboard';
+import ClassSettings from '@/components/ClassSettings';
 import ClassFileManager from '@/components/ClassFileManager';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -24,7 +25,8 @@ import {
   TrendingUp,
   Monitor,
   ArrowLeft,
-  Folder
+  Folder,
+  Settings
 } from 'lucide-react';
 
 interface ClassData {
@@ -35,11 +37,12 @@ interface ClassData {
   teacher_id: string;
   notebook_content: any[];
   is_active: boolean;
+  is_open?: boolean;
   created_at: string;
   member_count?: number;
 }
 
-type ViewMode = 'classes' | 'notebook' | 'monitoring' | 'profile' | 'chat' | 'assignments' | 'progress' | 'files';
+type ViewMode = 'classes' | 'notebook' | 'monitoring' | 'profile' | 'chat' | 'assignments' | 'progress' | 'files' | 'settings';
 
 const ClassroomDashboard = () => {
   const { user, signOut } = useAuth();
@@ -207,6 +210,26 @@ const ClassroomDashboard = () => {
           </div>
         );
       
+      case 'settings':
+        return selectedClass && userRole === 'teacher' ? (
+          <div className="p-6">
+            <ClassSettings 
+              classId={selectedClass.id} 
+              className={selectedClass.name}
+              isOpen={selectedClass.is_open || true}
+              isActive={selectedClass.is_active}
+              onBack={() => setCurrentView('notebook')}
+            />
+          </div>
+        ) : (
+          <div className="text-center py-12">
+            <p className="text-white">Access denied or no class selected</p>
+            <Button onClick={handleBackToClasses} className="mt-4 bg-white/20 text-white hover:bg-white/30">
+              Back to Classes
+            </Button>
+          </div>
+        );
+      
       default:
         return null;
     }
@@ -314,15 +337,27 @@ const ClassroomDashboard = () => {
                  </Button>
                  
                  {userRole === 'teacher' && (
-                   <Button
-                     variant="ghost"
-                     size="sm"
-                     className={getNavButtonClassName('monitoring')}
-                     onClick={() => setCurrentView('monitoring')}
-                   >
-                     <Monitor className="h-4 w-4 mr-2" />
-                     Monitor
-                   </Button>
+                   <>
+                     <Button
+                       variant="ghost"
+                       size="sm"
+                       className={getNavButtonClassName('monitoring')}
+                       onClick={() => setCurrentView('monitoring')}
+                     >
+                       <Monitor className="h-4 w-4 mr-2" />
+                       Monitor
+                     </Button>
+                     
+                     <Button
+                       variant="ghost"
+                       size="sm"
+                       className={getNavButtonClassName('settings')}
+                       onClick={() => setCurrentView('settings')}
+                     >
+                       <Settings className="h-4 w-4 mr-2" />
+                       Settings
+                     </Button>
+                   </>
                  )}
               </>
             )}
