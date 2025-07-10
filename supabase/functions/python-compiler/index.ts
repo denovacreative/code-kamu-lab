@@ -45,17 +45,19 @@ async function executePython(code: string, input: string): Promise<any> {
         
         // Check if this is a matplotlib/plotting code
         if (code.includes('matplotlib') || code.includes('plt.show()') || code.includes('plt.plot') || code.includes('plt.figure')) {
+          console.log('Detected matplotlib code, generating plot...');
           // Generate a sample SVG plot
           const plotSvg = generateSamplePlot(code);
           output = plotSvg;
           isPlotGenerated = true;
         }
         
-        // Simulate Python execution with pattern matching
+        // Handle print statements
+        let printOutput = '';
         if (code.includes('print(')) {
           const printMatches = code.match(/print\((.*?)\)/g);
           if (printMatches) {
-            const printOutput = printMatches.map(match => {
+            printOutput = printMatches.map(match => {
               const content = match.replace(/print\((['"]?)(.*?)\1\)/, '$2');
               // Handle string interpolation-like patterns
               if (content.includes('+')) {
@@ -66,13 +68,14 @@ async function executePython(code: string, input: string): Promise<any> {
               }
               return content.replace(/['"]([^'"]*?)['"]/, '$1');
             }).join('\n');
-            
-            if (isPlotGenerated) {
-              output += '\n' + printOutput;
-            } else {
-              output = printOutput;
-            }
           }
+        }
+        
+        // Combine plot and print output
+        if (isPlotGenerated && printOutput) {
+          output = output + '\n\n' + printOutput;
+        } else if (printOutput && !isPlotGenerated) {
+          output = printOutput;
         }
         
         if (code.includes('for') && code.includes('range')) {
