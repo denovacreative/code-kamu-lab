@@ -370,6 +370,42 @@ export type Database = {
         }
         Relationships: []
       }
+      code_review_comments: {
+        Row: {
+          assignment_id: string
+          author_id: string
+          content: string
+          created_at: string
+          id: string
+          line_number: number
+          submission_id: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          assignment_id: string
+          author_id: string
+          content: string
+          created_at?: string
+          id?: string
+          line_number: number
+          submission_id: string
+          type?: string
+          updated_at?: string
+        }
+        Update: {
+          assignment_id?: string
+          author_id?: string
+          content?: string
+          created_at?: string
+          id?: string
+          line_number?: number
+          submission_id?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       notebook_assignments: {
         Row: {
           assigned_at: string

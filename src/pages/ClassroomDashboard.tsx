@@ -277,27 +277,27 @@ const ClassroomDashboard = () => {
                   Assignments
                 </Button>
                 
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className={getNavButtonClassName('progress')}
-                  onClick={() => setCurrentView('progress')}
-                >
-                  <TrendingUp className="h-4 w-4 mr-2" />
-                  Progress
-                </Button>
-                
-                {userRole === 'teacher' && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className={getNavButtonClassName('monitoring')}
-                    onClick={() => setCurrentView('monitoring')}
-                  >
-                    <Monitor className="h-4 w-4 mr-2" />
-                    Monitor
-                  </Button>
-                )}
+                 <Button
+                   variant="ghost"
+                   size="sm"
+                   className={getNavButtonClassName('progress')}
+                   onClick={() => setCurrentView('progress')}
+                 >
+                   <TrendingUp className="h-4 w-4 mr-2" />
+                   Progress
+                 </Button>
+                 
+                 {userRole === 'teacher' && (
+                   <Button
+                     variant="ghost"
+                     size="sm"
+                     className={getNavButtonClassName('monitoring')}
+                     onClick={() => setCurrentView('monitoring')}
+                   >
+                     <Monitor className="h-4 w-4 mr-2" />
+                     Monitor
+                   </Button>
+                 )}
               </>
             )}
             

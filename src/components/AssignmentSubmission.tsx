@@ -1,4 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
+import { useAutoSave } from '@/hooks/useAutoSave';
+import CodeReview from './CodeReview';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -72,6 +74,19 @@ const AssignmentSubmission = ({ assignment, onBack }: AssignmentSubmissionProps)
   const [isUploading, setIsUploading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [showCodeReview, setShowCodeReview] = useState(false);
+
+  // Auto-save functionality
+  const { isSaving, lastSavedText, saveNow } = useAutoSave({
+    data: { codeContent, submission },
+    onSave: async (data) => {
+      if (submission.id && data.codeContent !== '') {
+        await saveSubmission('draft'); // Auto-save as draft
+      }
+    },
+    delay: 3000, // Save every 3 seconds
+    enabled: assignment.assignment_type === 'code_editor'
+  });
 
   useEffect(() => {
     loadExistingSubmission();
@@ -287,6 +302,12 @@ const AssignmentSubmission = ({ assignment, onBack }: AssignmentSubmissionProps)
   const isOverdue = assignment.due_date && new Date(assignment.due_date) < new Date();
   const canSubmit = !isOverdue && submission.status !== 'submitted';
 
+  const getSubmitButtonText = () => {
+    if (isSubmitting) return 'Submitting...';
+    if (submission.status === 'submitted') return 'Submitted';
+    return 'Submit Assignment';
+  };
+
   if (isLoading) {
     return (
       <Card className="max-w-4xl mx-auto">
@@ -338,9 +359,18 @@ const AssignmentSubmission = ({ assignment, onBack }: AssignmentSubmissionProps)
       {/* Assignment Details */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center">
-            <FileText className="h-5 w-5 mr-2 text-blue-600" />
-            Assignment Details
+          <CardTitle className="flex items-center justify-between text-lg">
+            {assignment.title}
+            {assignment.assignment_type === 'code_editor' && (
+              <div className="flex items-center space-x-2 text-sm font-normal">
+                <span className={`text-xs ${isSaving ? 'text-blue-600' : 'text-green-600'}`}>
+                  {isSaving ? 'Saving...' : `Last saved: ${lastSavedText}`}
+                </span>
+                <Button size="sm" variant="outline" onClick={saveNow}>
+                  Save Now
+                </Button>
+              </div>
+            )}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -483,14 +513,24 @@ const AssignmentSubmission = ({ assignment, onBack }: AssignmentSubmissionProps)
                     Save Draft
                   </Button>
                   
-                  <Button 
-                    onClick={() => saveSubmission('submitted')}
-                    disabled={isSubmitting}
-                    className="bg-green-600 hover:bg-green-700 text-white"
-                  >
-                    <Send className="h-4 w-4 mr-2" />
-                    {isSubmitting ? 'Submitting...' : 'Submit Assignment'}
-                  </Button>
+                  <div className="flex space-x-2">
+                    {submission.id && assignment.assignment_type === 'code_editor' && (
+                      <Button
+                        variant="outline"
+                        onClick={() => setShowCodeReview(!showCodeReview)}
+                      >
+                        {showCodeReview ? 'Hide' : 'Show'} Code Review
+                      </Button>
+                    )}
+                    <Button 
+                      onClick={() => saveSubmission('submitted')}
+                      disabled={isSubmitting}
+                      className="bg-green-600 hover:bg-green-700 text-white"
+                    >
+                      <Send className="h-4 w-4 mr-2" />
+                      {getSubmitButtonText()}
+                    </Button>
+                  </div>
                 </>
               )}
             </div>
@@ -523,6 +563,16 @@ const AssignmentSubmission = ({ assignment, onBack }: AssignmentSubmissionProps)
             )}
           </CardContent>
         </Card>
+      )}
+
+      {/* Code Review Section */}
+      {showCodeReview && submission.id && assignment.assignment_type === 'code_editor' && (
+        <CodeReview
+          assignmentId={assignment.id}
+          submissionId={submission.id}
+          code={codeContent}
+          readOnly={submission.status === 'submitted'}
+        />
       )}
     </div>
   );
