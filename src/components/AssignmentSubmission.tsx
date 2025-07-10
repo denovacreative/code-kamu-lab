@@ -69,7 +69,7 @@ const AssignmentSubmission = ({ assignment, onBack }: AssignmentSubmissionProps)
     status: 'draft'
   });
   
-  const [codeContent, setCodeContent] = useState('# Write your code here\nprint("Hello, World!")');
+  const [codeContent, setCodeContent] = useState('# Write your Python code here\nprint("Hello, World!")');
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -85,7 +85,7 @@ const AssignmentSubmission = ({ assignment, onBack }: AssignmentSubmissionProps)
       }
     },
     delay: 3000, // Save every 3 seconds
-    enabled: assignment.assignment_type === 'code_editor'
+    enabled: assignment.assignment_type === 'code_editor' || assignment.assignment_type === 'notebook'
   });
 
   useEffect(() => {
@@ -409,21 +409,73 @@ const AssignmentSubmission = ({ assignment, onBack }: AssignmentSubmissionProps)
         </CardHeader>
         
         <CardContent className="space-y-6">
+          {/* Notebook Interface */}
+          {assignment.assignment_type === 'notebook' && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <label className="text-sm font-medium">Notebook Content:</label>
+                <div className="flex items-center space-x-2">
+                  <Badge variant="outline" className="text-xs">
+                    Auto-save: {isSaving ? 'Saving...' : 'Saved'}
+                  </Badge>
+                  <Button size="sm" variant="outline" disabled={!canSubmit}>
+                    <Play className="h-3 w-3 mr-1" />
+                    Run Cell
+                  </Button>
+                </div>
+              </div>
+              
+              <div className="border rounded-lg overflow-hidden">
+                <div className="bg-gray-50 border-b px-3 py-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">Code Cell</span>
+                    <Badge variant="outline" className="text-xs">Python</Badge>
+                  </div>
+                </div>
+                <Textarea
+                  value={codeContent}
+                  onChange={(e) => setCodeContent(e.target.value)}
+                  placeholder="# Enter your Python code here\nprint('Hello from notebook!')\n\n# You can add multiple lines\n# Use proper indentation for functions and loops"
+                  className="font-mono text-sm h-64 resize-none border-0 rounded-none focus:ring-0"
+                  disabled={!canSubmit}
+                />
+              </div>
+              
+              {/* Output area for notebook */}
+              <div className="border rounded-lg overflow-hidden bg-gray-50">
+                <div className="bg-gray-100 border-b px-3 py-2">
+                  <span className="text-sm font-medium">Output</span>
+                </div>
+                <div className="p-3 min-h-20 font-mono text-sm text-gray-600">
+                  {/* Placeholder for code output */}
+                  <p className="italic">Run your code to see output here...</p>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Code Editor Interface */}
           {assignment.assignment_type === 'code_editor' && (
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <label className="text-sm font-medium">Code:</label>
-                <Button size="sm" variant="outline" disabled={!canSubmit}>
-                  <Play className="h-3 w-3 mr-1" />
-                  Run Code
-                </Button>
+                <div className="flex items-center space-x-2">
+                  {isSaving && (
+                    <Badge variant="outline" className="text-xs">
+                      Auto-saving...
+                    </Badge>
+                  )}
+                  <Button size="sm" variant="outline" disabled={!canSubmit}>
+                    <Play className="h-3 w-3 mr-1" />
+                    Run Code
+                  </Button>
+                </div>
               </div>
               
               <Textarea
                 value={codeContent}
                 onChange={(e) => setCodeContent(e.target.value)}
-                placeholder="Write your code here..."
+                placeholder="// Write your code here...\nconsole.log('Hello, World!');"
                 className="font-mono text-sm h-64 resize-none"
                 disabled={!canSubmit}
               />
@@ -514,7 +566,7 @@ const AssignmentSubmission = ({ assignment, onBack }: AssignmentSubmissionProps)
                   </Button>
                   
                   <div className="flex space-x-2">
-                    {submission.id && assignment.assignment_type === 'code_editor' && (
+                    {submission.id && (assignment.assignment_type === 'code_editor' || assignment.assignment_type === 'notebook') && (
                       <Button
                         variant="outline"
                         onClick={() => setShowCodeReview(!showCodeReview)}
@@ -566,7 +618,7 @@ const AssignmentSubmission = ({ assignment, onBack }: AssignmentSubmissionProps)
       )}
 
       {/* Code Review Section */}
-      {showCodeReview && submission.id && assignment.assignment_type === 'code_editor' && (
+      {showCodeReview && submission.id && (assignment.assignment_type === 'code_editor' || assignment.assignment_type === 'notebook') && (
         <CodeReview
           assignmentId={assignment.id}
           submissionId={submission.id}
