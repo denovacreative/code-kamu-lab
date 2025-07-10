@@ -27,7 +27,8 @@ import {
   Monitor,
   ArrowLeft,
   Folder,
-  Settings
+  Settings,
+  Blocks
 } from 'lucide-react';
 
 interface ClassData {
@@ -333,6 +334,16 @@ const ClassroomDashboard = () => {
                 >
                   <ClipboardList className="h-4 w-4 mr-2" />
                   Assignments
+                </Button>
+                
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-white hover:bg-white/20"
+                  onClick={() => window.open('/visual-coding', '_blank')}
+                >
+                  <Blocks className="h-4 w-4 mr-2" />
+                  Visual Coding
                 </Button>
                 
                  <Button

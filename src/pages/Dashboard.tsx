@@ -36,7 +36,7 @@ const Dashboard = () => {
           age: "Ages 7+",
           icon: Blocks,
           color: "bg-pictoblox-pink",
-          route: "/blocks"
+          route: "/visual-coding"
         }
       ]
     },
@@ -168,7 +168,7 @@ const Dashboard = () => {
                       <Button 
                         className="w-full bg-[hsl(var(--pictoblox-purple))] hover:bg-[hsl(var(--pictoblox-purple-dark))] text-white"
                         onClick={() => {
-                          if (item.route === '/py-notebook' || item.route === '/classroom') {
+                          if (item.route === '/py-notebook' || item.route === '/classroom' || item.route === '/visual-coding') {
                             window.location.href = item.route;
                           } else {
                             console.log(`Navigate to ${item.route}`);

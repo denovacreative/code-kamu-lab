@@ -9,6 +9,7 @@ import Index from "./pages/Index";
 import Landing from "./pages/Landing";
 import AuthPage from "./pages/AuthPage";
 import PyNotebook from "./pages/PyNotebook";
+import VisualCoding from "./pages/VisualCoding";
 import ClassroomDashboard from "./pages/ClassroomDashboard";
 import NotFound from "./pages/NotFound";
 
@@ -37,6 +38,14 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <PyNotebook />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/visual-coding" 
+              element={
+                <ProtectedRoute>
+                  <VisualCoding />
                 </ProtectedRoute>
               } 
             />
