@@ -112,6 +112,14 @@ const Dashboard = () => {
             </Button>
             <Button
               variant="outline"
+              onClick={() => window.location.href = '/classroom?tab=profile'}
+              className="bg-white/10 border-white/20 text-white hover:bg-white/20"
+            >
+              <User className="h-4 w-4 mr-2" />
+              Profile
+            </Button>
+            <Button
+              variant="outline"
               onClick={signOut}
               className="bg-white/10 border-white/20 text-white hover:bg-white/20"
             >

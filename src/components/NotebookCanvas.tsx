@@ -133,17 +133,20 @@ print("Canvas plot generated successfully!")
           description: "Check the output for details",
           variant: "destructive"
         });
-      } else if (result.includes('<img') || result.includes('data:image') || result.includes('.png') || result.includes('.jpg')) {
+      } else if (data.is_plot || result.includes('<svg') || result.includes('<img') || result.includes('data:image') || result.includes('.png') || result.includes('.jpg')) {
         setOutputType('image');
         toast({
           title: "Plot Generated!",
           description: "Your visualization has been created",
         });
         
-        // If we have image data, try to draw it on canvas
-        if (canvasRef.current) {
+        // If we have SVG data, display it directly
+        if (result.includes('<svg')) {
+          // SVG is already in the output, no need to draw on canvas
+        } else if (canvasRef.current && result.includes('data:image')) {
+          // Handle base64 image data
           const ctx = canvasRef.current.getContext('2d');
-          if (ctx && result.includes('data:image')) {
+          if (ctx) {
             const img = document.createElement('img');
             img.onload = () => {
               ctx.clearRect(0, 0, canvasRef.current!.width, canvasRef.current!.height);
