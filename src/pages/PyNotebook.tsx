@@ -31,8 +31,11 @@ interface NotebookCell {
   type: 'code' | 'markdown';
   content: string;
   output?: string;
+  outputType?: 'text' | 'image' | 'html' | 'error';
   executionTime?: number;
   isExecuting?: boolean;
+  executionCount?: number;
+  lastExecuted?: Date;
 }
 
 const PyNotebook = () => {
@@ -50,31 +53,63 @@ const PyNotebook = () => {
     {
       id: '1',
       type: 'code',
-      content: '# Welcome to Python Notebook!\nprint("Hello, Python!")\n\n# Try some basic calculations\nresult = 2 + 2\nprint(f"2 + 2 = {result}")',
-      output: ''
+      content: '# Welcome to Interactive Python Notebook!\n# Try running this cell to see the output\nprint("Hello, Python!")\n\n# Variables persist between cells\nname = "Python Learner"\nprint(f"Welcome, {name}!")\n\n# Try some calculations\nimport math\nresult = math.sqrt(16)\nprint(f"Square root of 16 = {result}")',
+      output: '',
+      executionCount: 0
+    },
+    {
+      id: '2', 
+      type: 'code',
+      content: '# Variables from previous cells are available\nprint(f"Your name is: {name}")\n\n# Create a simple visualization\nimport matplotlib.pyplot as plt\nimport numpy as np\n\n# Generate data\nx = np.linspace(0, 10, 50)\ny = np.sin(x)\n\n# Create plot\nplt.figure(figsize=(8, 5))\nplt.plot(x, y, "b-", linewidth=2)\nplt.title("Sine Wave")\nplt.xlabel("x")\nplt.ylabel("sin(x)")\nplt.grid(True)\nplt.show()',
+      output: '',
+      executionCount: 0
     }
   ]);
+  const [globalExecutionCount, setGlobalExecutionCount] = useState(1);
+  const [sessionVariables, setSessionVariables] = useState<Record<string, any>>({});
   const [activeCell, setActiveCell] = useState<string | null>('1');
   const textareaRefs = useRef<{ [key: string]: HTMLTextAreaElement | null }>({});
 
-  // Online Python execution using Supabase Edge Function
-  const executePythonCode = async (code: string): Promise<{ output: string, executionTime: number }> => {
+  // Enhanced Python execution with session support
+  const executePythonCode = async (code: string, cellId: string): Promise<{ output: string, outputType: string, executionTime: number, variables?: Record<string, any> }> => {
     try {
       const { data, error } = await supabase.functions.invoke('python-compiler', {
-        body: { code }
+        body: { 
+          code,
+          session_id: cellId,
+          context: sessionVariables
+        }
       });
 
       if (error) {
         throw new Error(error.message);
       }
 
+      // Update session variables if returned
+      if (data.variables) {
+        setSessionVariables(prev => ({ ...prev, ...data.variables }));
+      }
+
+      // Determine output type
+      let outputType = 'text';
+      if (data.error) {
+        outputType = 'error';
+      } else if (data.output && (data.output.includes('<img') || data.output.includes('data:image'))) {
+        outputType = 'image';
+      } else if (data.output && data.output.includes('<')) {
+        outputType = 'html';
+      }
+
       return {
         output: data.output || data.error || 'No output',
-        executionTime: data.execution_time || 0
+        outputType,
+        executionTime: data.execution_time || 0,
+        variables: data.variables
       };
     } catch (error) {
       return {
         output: `Error: ${error.message}`,
+        outputType: 'error',
         executionTime: 0
       };
     }
@@ -84,7 +119,7 @@ const PyNotebook = () => {
     setTerminalHistory(prev => [...prev, `>>> ${command}`]);
     
     try {
-      const result = await executePythonCode(command);
+      const result = await executePythonCode(command, 'terminal');
       setTerminalHistory(prev => [...prev, result.output, '>>> ']);
     } catch (error) {
       setTerminalHistory(prev => [...prev, `Error: ${error.message}`, '>>> ']);
@@ -98,14 +133,22 @@ const PyNotebook = () => {
     }
   };
 
-  const addCell = (type: 'code' | 'markdown' = 'code') => {
+  const addCell = (type: 'code' | 'markdown' = 'code', index?: number) => {
     const newCell: NotebookCell = {
       id: Date.now().toString(),
       type,
-      content: type === 'code' ? '# New cell\n' : '# Markdown Cell\nWrite your markdown here...',
-      output: ''
+      content: type === 'code' ? '# New code cell\n' : '# Markdown Cell\nWrite your markdown here...',
+      output: '',
+      executionCount: 0
     };
-    setCells([...cells, newCell]);
+    
+    if (index !== undefined) {
+      const newCells = [...cells];
+      newCells.splice(index + 1, 0, newCell);
+      setCells(newCells);
+    } else {
+      setCells([...cells, newCell]);
+    }
     setActiveCell(newCell.id);
   };
 
@@ -127,17 +170,24 @@ const PyNotebook = () => {
     const cell = cells.find(c => c.id === cellId);
     if (!cell || cell.type !== 'code') return;
 
+    // Update cell to executing state
     setCells(cells.map(c => 
       c.id === cellId ? { ...c, isExecuting: true } : c
     ));
 
     try {
-      const result = await executePythonCode(cell.content);
+      const result = await executePythonCode(cell.content, cellId);
+      const executionCount = globalExecutionCount;
+      setGlobalExecutionCount(prev => prev + 1);
+      
       setCells(cells.map(c => 
         c.id === cellId ? { 
           ...c, 
           output: result.output, 
+          outputType: result.outputType as any,
           executionTime: result.executionTime,
+          executionCount,
+          lastExecuted: new Date(),
           isExecuting: false 
         } : c
       ));
@@ -146,6 +196,7 @@ const PyNotebook = () => {
         c.id === cellId ? { 
           ...c, 
           output: `Error: ${error}`, 
+          outputType: 'error' as any,
           executionTime: 0,
           isExecuting: false 
         } : c
@@ -153,10 +204,40 @@ const PyNotebook = () => {
     }
   };
 
+  const executeAllCells = async () => {
+    for (const cell of cells) {
+      if (cell.type === 'code') {
+        await executeCell(cell.id);
+        // Small delay between executions
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+    }
+  };
+
+  const clearAllOutputs = () => {
+    setCells(cells.map(cell => ({ 
+      ...cell, 
+      output: '', 
+      outputType: undefined,
+      executionCount: 0 
+    })));
+    setSessionVariables({});
+    setGlobalExecutionCount(1);
+  };
+
   const handleKeyDown = (e: React.KeyboardEvent, cellId: string) => {
     if (e.ctrlKey && e.key === 'Enter') {
       e.preventDefault();
       executeCell(cellId);
+    } else if (e.shiftKey && e.key === 'Enter') {
+      e.preventDefault();
+      executeCell(cellId);
+      const currentIndex = cells.findIndex(c => c.id === cellId);
+      if (currentIndex < cells.length - 1) {
+        setActiveCell(cells[currentIndex + 1].id);
+      } else {
+        addCell('code', currentIndex);
+      }
     }
   };
 
@@ -218,55 +299,79 @@ const PyNotebook = () => {
 
         {/* Notebook Content */}
         <div className="flex-1 flex flex-col overflow-hidden">
-          {/* Toolbar */}
+          {/* Enhanced Toolbar */}
           <div className="bg-white/95 backdrop-blur-sm p-4 border-b border-white/20">
-            <div className="flex items-center space-x-2">
-              <Button
-                onClick={() => addCell('code')}
-                size="sm"
-                className="bg-[hsl(var(--pictoblox-blue))] hover:bg-[hsl(var(--pictoblox-blue))/80]"
-              >
-                <Plus className="h-4 w-4 mr-1" />
-                Code
-              </Button>
-              <Button
-                onClick={() => addCell('markdown')}
-                variant="outline"
-                size="sm"
-              >
-                <Plus className="h-4 w-4 mr-1" />
-                Markdown
-              </Button>
-              <Button
-                onClick={() => setShowTerminal(!showTerminal)}
-                variant={showTerminal ? "default" : "outline"}
-                size="sm"
-                className={showTerminal ? "bg-[hsl(var(--pictoblox-purple))]" : ""}
-              >
-                <Terminal className="h-4 w-4 mr-1" />
-                Terminal
-              </Button>
-              <Button
-                onClick={() => setShowCanvas(!showCanvas)}
-                variant={showCanvas ? "default" : "outline"}
-                size="sm"
-                className={showCanvas ? "bg-[hsl(var(--pictoblox-blue))]" : ""}
-              >
-                <Palette className="h-4 w-4 mr-1" />
-                Canvas
-              </Button>
-              <Button
-                onClick={() => setShowSidebar(!showSidebar)}
-                variant={showSidebar ? "default" : "outline"}
-                size="sm"
-              >
-                <Layout className="h-4 w-4 mr-1" />
-                Files
-              </Button>
-              <div className="flex-1" />
-              <Badge variant="secondary" className="bg-green-100 text-green-700">
-                {cells.length} cells
-              </Badge>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <Button
+                  onClick={() => addCell('code')}
+                  size="sm"
+                  className="bg-[hsl(var(--pictoblox-blue))] hover:bg-[hsl(var(--pictoblox-blue))/80]"
+                >
+                  <Plus className="h-4 w-4 mr-1" />
+                  Code
+                </Button>
+                <Button
+                  onClick={() => addCell('markdown')}
+                  variant="outline"
+                  size="sm"
+                >
+                  <Plus className="h-4 w-4 mr-1" />
+                  Markdown
+                </Button>
+                <Button
+                  onClick={executeAllCells}
+                  variant="outline"
+                  size="sm"
+                  className="text-green-600 border-green-300 hover:bg-green-50"
+                >
+                  <Play className="h-4 w-4 mr-1" />
+                  Run All
+                </Button>
+                <Button
+                  onClick={clearAllOutputs}
+                  variant="outline"
+                  size="sm"
+                  className="text-orange-600 border-orange-300 hover:bg-orange-50"
+                >
+                  Clear Outputs
+                </Button>
+              </div>
+              
+              <div className="flex items-center space-x-2">
+                <Button
+                  onClick={() => setShowTerminal(!showTerminal)}
+                  variant={showTerminal ? "default" : "outline"}
+                  size="sm"
+                  className={showTerminal ? "bg-[hsl(var(--pictoblox-purple))]" : ""}
+                >
+                  <Terminal className="h-4 w-4 mr-1" />
+                  Terminal
+                </Button>
+                <Button
+                  onClick={() => setShowCanvas(!showCanvas)}
+                  variant={showCanvas ? "default" : "outline"}
+                  size="sm"
+                  className={showCanvas ? "bg-[hsl(var(--pictoblox-blue))]" : ""}
+                >
+                  <Palette className="h-4 w-4 mr-1" />
+                  Canvas
+                </Button>
+                <Button
+                  onClick={() => setShowSidebar(!showSidebar)}
+                  variant={showSidebar ? "default" : "outline"}
+                  size="sm"
+                >
+                  <Layout className="h-4 w-4 mr-1" />
+                  Files
+                </Button>
+                <Badge variant="secondary" className="bg-green-100 text-green-700">
+                  {cells.length} cells
+                </Badge>
+                <Badge variant="outline" className="bg-blue-100 text-blue-700">
+                  Session: {Object.keys(sessionVariables).length} vars
+                </Badge>
+              </div>
             </div>
           </div>
 
@@ -292,11 +397,11 @@ const PyNotebook = () => {
                             variant={cell.type === 'code' ? 'default' : 'secondary'}
                             className={cell.type === 'code' ? 'bg-[hsl(var(--pictoblox-blue))]' : ''}
                           >
-                            {cell.type === 'code' ? 'Code' : 'Markdown'} [{index + 1}]
+                            {cell.type === 'code' ? `Code [${cell.executionCount || ' '}]` : 'Markdown'} [{index + 1}]
                           </Badge>
                           {cell.isExecuting && (
-                            <Badge variant="outline" className="text-orange-600 border-orange-300">
-                              Running...
+                            <Badge variant="outline" className="text-orange-600 border-orange-300 animate-pulse">
+                              Executing...
                             </Badge>
                           )}
                           {cell.executionTime && cell.executionTime > 0 && (
@@ -305,9 +410,26 @@ const PyNotebook = () => {
                               {cell.executionTime.toFixed(0)}ms
                             </Badge>
                           )}
+                          {cell.lastExecuted && (
+                            <Badge variant="outline" className="text-gray-600 border-gray-300 text-xs">
+                              {cell.lastExecuted.toLocaleTimeString()}
+                            </Badge>
+                          )}
                         </div>
                         
                         <div className="flex items-center space-x-2">
+                            <Button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                const currentIndex = cells.findIndex(c => c.id === cell.id);
+                                addCell('code', currentIndex);
+                              }}
+                              size="sm"
+                              variant="outline"
+                              className="text-blue-600 border-blue-300 hover:bg-blue-50 mr-1"
+                            >
+                              <Plus className="h-3 w-3" />
+                            </Button>
                           {cell.type === 'code' && (
                             <Button
                               onClick={(e) => {
@@ -320,7 +442,7 @@ const PyNotebook = () => {
                               className="text-green-600 border-green-300 hover:bg-green-50"
                             >
                               <Play className="h-3 w-3 mr-1" />
-                              Run
+                              {cell.isExecuting ? 'Running...' : 'Run'}
                             </Button>
                           )}
                           <Button
@@ -346,7 +468,7 @@ const PyNotebook = () => {
                         onKeyDown={(e) => handleKeyDown(e, cell.id)}
                         placeholder={
                           cell.type === 'code' 
-                            ? "# Write your Python code here...\n# Press Ctrl+Enter to run"
+                            ? "# Write your Python code here...\n# Press Ctrl+Enter to run\n# Press Shift+Enter to run and create new cell"
                             : "Write your markdown here..."
                         }
                         className="min-h-24 font-mono text-sm resize-none border-0 focus:ring-0 bg-gray-50"
@@ -355,13 +477,34 @@ const PyNotebook = () => {
                         }}
                       />
                       
-                      {/* Output for code cells */}
+                      {/* Enhanced Output Display */}
                       {cell.type === 'code' && cell.output !== undefined && (
-                        <div className="mt-3 p-3 bg-gray-900 text-green-400 rounded-md font-mono text-sm">
-                          <div className="text-gray-500 text-xs mb-1">Output:</div>
-                          <pre className="whitespace-pre-wrap">
-                            {cell.output || '(no output)'}
-                          </pre>
+                        <div className="mt-3">
+                          {cell.outputType === 'error' ? (
+                            <div className="p-3 bg-red-50 border border-red-200 rounded-md">
+                              <div className="text-red-600 text-xs mb-1 font-semibold">Error:</div>
+                              <pre className="text-red-800 text-sm whitespace-pre-wrap font-mono">
+                                {cell.output}
+                              </pre>
+                            </div>
+                          ) : cell.outputType === 'image' ? (
+                            <div className="p-3 bg-gray-50 border border-gray-200 rounded-md">
+                              <div className="text-gray-600 text-xs mb-2">Output:</div>
+                              <div dangerouslySetInnerHTML={{ __html: cell.output }} />
+                            </div>
+                          ) : cell.outputType === 'html' ? (
+                            <div className="p-3 bg-gray-50 border border-gray-200 rounded-md">
+                              <div className="text-gray-600 text-xs mb-2">HTML Output:</div>
+                              <div dangerouslySetInnerHTML={{ __html: cell.output }} />
+                            </div>
+                          ) : (
+                            <div className="p-3 bg-gray-900 text-green-400 rounded-md border border-gray-700">
+                              <div className="text-gray-400 text-xs mb-1">Output:</div>
+                              <pre className="whitespace-pre-wrap font-mono text-sm">
+                                {cell.output || '(no output)'}
+                              </pre>
+                            </div>
+                          )}
                         </div>
                       )}
                     </CardContent>
@@ -430,23 +573,34 @@ const PyNotebook = () => {
             <div className="p-6">
               <Card className="bg-blue-50 border-blue-200">
                 <CardHeader>
-                  <CardTitle className="text-blue-800">🐍 Python Notebook Guide</CardTitle>
+                  <CardTitle className="text-blue-800">🐍 Interactive Python Notebook Guide</CardTitle>
                 </CardHeader>
                 <CardContent className="text-blue-700">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                     <div>
                       <h4 className="font-semibold mb-2">Keyboard Shortcuts:</h4>
                       <ul className="space-y-1">
                         <li>• <kbd className="bg-blue-200 px-1 rounded">Ctrl+Enter</kbd> - Run cell</li>
+                        <li>• <kbd className="bg-blue-200 px-1 rounded">Shift+Enter</kbd> - Run cell & create new</li>
                         <li>• Click cell to select/edit</li>
+                      </ul>
+                    </div>
+                    <div>
+                      <h4 className="font-semibold mb-2">Features:</h4>
+                      <ul className="space-y-1">
+                        <li>• Variables persist between cells</li>
+                        <li>• Rich output display (text, images, HTML)</li>
+                        <li>• Execution count tracking</li>
+                        <li>• Real-time collaboration</li>
                       </ul>
                     </div>
                     <div>
                       <h4 className="font-semibold mb-2">Try These Examples:</h4>
                       <ul className="space-y-1">
                         <li>• <code>print("Hello World!")</code></li>
-                        <li>• <code>for i in range(5): print(i)</code></li>
-                        <li>• <code>import math</code></li>
+                        <li>• <code>import matplotlib.pyplot as plt</code></li>
+                        <li>• <code>import numpy as np</code></li>
+                        <li>• <code>name = "Your Name"</code></li>
                       </ul>
                     </div>
                   </div>
