@@ -7,6 +7,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
 import AuthPage from "./pages/AuthPage";
+import PyNotebook from "./pages/PyNotebook";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -25,6 +26,14 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <Index />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/py-notebook" 
+              element={
+                <ProtectedRoute>
+                  <PyNotebook />
                 </ProtectedRoute>
               } 
             />

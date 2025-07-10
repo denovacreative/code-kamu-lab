@@ -139,7 +139,13 @@ const Dashboard = () => {
                       
                       <Button 
                         className="w-full bg-[hsl(var(--pictoblox-purple))] hover:bg-[hsl(var(--pictoblox-purple-dark))] text-white"
-                        onClick={() => console.log(`Navigate to ${item.route}`)}
+                        onClick={() => {
+                          if (item.route === '/py-notebook') {
+                            window.location.href = item.route;
+                          } else {
+                            console.log(`Navigate to ${item.route}`);
+                          }
+                        }}
                       >
                         Start Coding
                       </Button>
