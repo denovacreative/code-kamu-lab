@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import NotebookSidebar from '@/components/NotebookSidebar';
@@ -40,6 +41,7 @@ interface NotebookCell {
 
 const PyNotebook = () => {
   const { user, signOut } = useAuth();
+  const { toast } = useToast();
   const [showTerminal, setShowTerminal] = useState(false);
   const [showCanvas, setShowCanvas] = useState(false);
   const [showSidebar, setShowSidebar] = useState(true);
@@ -249,7 +251,26 @@ const PyNotebook = () => {
 
   const handleFileSelect = (file: any) => {
     console.log('File selected:', file);
-    // Handle file selection logic here
+  };
+
+  const handleLoadContent = (content: string, fileName: string) => {
+    // Parse content into cells based on file type
+    if (fileName.endsWith('.ipynb') || fileName.endsWith('.py')) {
+      const newCells = content.split('\n\n').map((cellContent, index) => ({
+        id: `loaded-${Date.now()}-${index}`,
+        type: 'code' as const,
+        content: cellContent.trim(),
+        output: '',
+        executionCount: 0
+      }));
+      
+      setCells(newCells);
+      setActiveCell(newCells[0]?.id || null);
+      toast({
+        title: "Content Loaded",
+        description: `${fileName} loaded with ${newCells.length} cells`,
+      });
+    }
   };
 
   return (
@@ -294,7 +315,10 @@ const PyNotebook = () => {
       <div className="flex-1 flex overflow-hidden">
         {/* Sidebar */}
         {showSidebar && (
-          <NotebookSidebar onFileSelect={handleFileSelect} />
+          <NotebookSidebar 
+            onFileSelect={handleFileSelect} 
+            onLoadContent={handleLoadContent}
+          />
         )}
 
         {/* Notebook Content */}
