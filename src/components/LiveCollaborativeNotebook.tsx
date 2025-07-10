@@ -474,22 +474,41 @@ const LiveCollaborativeNotebook = ({
             </Button>
             
             {showUsersList && (
-              <div className="absolute top-16 right-4 bg-white rounded-lg shadow-lg p-3 z-50">
-                <h3 className="font-semibold mb-2">Online Users</h3>
-                <div className="space-y-2">
-                  {classUsers.map((classUser) => (
-                    <div key={classUser.user_id} className="flex items-center space-x-2">
-                      <Avatar className="h-6 w-6">
-                        <AvatarFallback className="text-xs">
-                          {classUser.username.substring(0, 2).toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                      <span className="text-sm">{classUser.username}</span>
-                      <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-                    </div>
-                  ))}
+              <>
+                {/* Overlay backdrop */}
+                <div 
+                  className="fixed inset-0 z-[50]" 
+                  onClick={() => setShowUsersList(false)}
+                />
+                {/* Dropdown menu */}
+                <div className="fixed top-16 right-4 bg-white rounded-lg shadow-xl p-4 z-[60] border border-gray-200 min-w-[200px] backdrop-blur-sm"
+                  style={{ zIndex: 9999 }}
+                >
+                  <h3 className="font-semibold mb-3 text-gray-900">Online Users ({classUsers.length})</h3>
+                  <div className="space-y-3 max-h-64 overflow-y-auto">
+                    {classUsers.length === 0 ? (
+                      <p className="text-gray-500 text-sm">No users online</p>
+                    ) : (
+                      classUsers.map((classUser) => (
+                        <div key={classUser.user_id} className="flex items-center space-x-3 p-2 rounded-md hover:bg-gray-50">
+                          <Avatar className="h-8 w-8">
+                            <AvatarFallback className="text-xs bg-blue-500 text-white">
+                              {classUser.username.substring(0, 2).toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-gray-900 truncate">{classUser.username}</p>
+                            <p className="text-xs text-gray-500">
+                              {classUser.user_id === user?.id ? 'You' : 'Active'}
+                            </p>
+                          </div>
+                          <div className="w-2 h-2 bg-green-400 rounded-full flex-shrink-0"></div>
+                        </div>
+                      ))
+                    )}
+                  </div>
                 </div>
-              </div>
+              </>
             )}
           </div>
         </div>
