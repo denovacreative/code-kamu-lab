@@ -2,6 +2,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
 import { 
   Code, 
   FileText, 
@@ -17,6 +18,7 @@ import {
 
 const Dashboard = () => {
   const { user, signOut } = useAuth();
+  const navigate = useNavigate();
   const features = [
     // Block Coding Section
     {
@@ -104,7 +106,7 @@ const Dashboard = () => {
           <div className="flex items-center space-x-2">
             <Button
               variant="outline"
-              onClick={() => window.location.href = '/classroom'}
+              onClick={() => navigate('/classroom')}
               className="bg-white/10 border-white/20 text-white hover:bg-white/20"
             >
               <Users className="h-4 w-4 mr-2" />
@@ -112,7 +114,7 @@ const Dashboard = () => {
             </Button>
             <Button
               variant="outline"
-              onClick={() => window.location.href = '/classroom?tab=profile'}
+              onClick={() => navigate('/classroom?tab=profile')}
               className="bg-white/10 border-white/20 text-white hover:bg-white/20"
             >
               <User className="h-4 w-4 mr-2" />
@@ -169,7 +171,7 @@ const Dashboard = () => {
                         className="w-full bg-[hsl(var(--pictoblox-purple))] hover:bg-[hsl(var(--pictoblox-purple-dark))] text-white"
                         onClick={() => {
                           if (item.route === '/py-notebook' || item.route === '/classroom' || item.route === '/visual-coding') {
-                            window.location.href = item.route;
+                            navigate(item.route);
                           } else {
                             console.log(`Navigate to ${item.route}`);
                           }

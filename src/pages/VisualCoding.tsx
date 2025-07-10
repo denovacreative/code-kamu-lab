@@ -480,7 +480,7 @@ const VisualCoding = () => {
             <Button 
               variant="outline" 
               onClick={() => navigate('/dashboard')}
-              className="bg-white/10 border-white/20 text-white hover:bg-white/20"
+              className="bg-white text-gray-800 border-gray-300 hover:bg-gray-100 font-medium"
             >
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back to Dashboard
