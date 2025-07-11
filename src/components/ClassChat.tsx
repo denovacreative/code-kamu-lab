@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { MessageCircle, Send, Users, Clock } from 'lucide-react';
+import { MessageCircle, Send, Users, Clock, Bell, BellRing } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface Message {
@@ -34,6 +34,8 @@ const ClassChat = ({ classId, className = "" }: ClassChatProps) => {
   const [newMessage, setNewMessage] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [onlineUsers, setOnlineUsers] = useState(0);
+  const [hasUnreadMessages, setHasUnreadMessages] = useState(false);
+  const [lastReadMessageId, setLastReadMessageId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
@@ -65,6 +67,7 @@ const ClassChat = ({ classId, className = "" }: ClassChatProps) => {
           
           // Show toast for new messages from others
           if (newMessage.user_id !== user?.id) {
+            setHasUnreadMessages(true);
             toast({
               title: "New Message",
               description: newMessage.profiles?.display_name || "Someone sent a message"
@@ -96,9 +99,14 @@ const ClassChat = ({ classId, className = "" }: ClassChatProps) => {
     };
   }, [classId, user]);
 
-  // Auto-scroll when new messages arrive
+  // Auto-scroll when new messages arrive and mark as read
   useEffect(() => {
     scrollToBottom();
+    // Mark messages as read when scrolled into view
+    if (messages.length > 0) {
+      setHasUnreadMessages(false);
+      setLastReadMessageId(messages[messages.length - 1].id);
+    }
   }, [messages]);
 
   const fetchMessages = async () => {
@@ -131,6 +139,11 @@ const ClassChat = ({ classId, className = "" }: ClassChatProps) => {
       })) || [];
 
       setMessages(messagesWithProfiles);
+      
+      // Set last read message for unread detection
+      if (messagesWithProfiles.length > 0) {
+        setLastReadMessageId(messagesWithProfiles[messagesWithProfiles.length - 1].id);
+      }
     } catch (error) {
       console.error('Error fetching messages:', error);
       toast({
@@ -216,7 +229,14 @@ const ClassChat = ({ classId, className = "" }: ClassChatProps) => {
       <CardHeader className="pb-2 flex-shrink-0">
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center text-lg">
-            <MessageCircle className="h-5 w-5 mr-2 text-blue-600" />
+            <div className="relative">
+              <MessageCircle className="h-5 w-5 mr-2 text-blue-600" />
+              {hasUnreadMessages && (
+                <div className="absolute -top-1 -right-1 h-3 w-3 bg-red-500 rounded-full flex items-center justify-center">
+                  <BellRing className="h-2 w-2 text-white animate-pulse" />
+                </div>
+              )}
+            </div>
             Class Chat
           </CardTitle>
           <div className="flex items-center space-x-2">

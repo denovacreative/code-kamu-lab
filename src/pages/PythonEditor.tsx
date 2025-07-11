@@ -26,7 +26,8 @@ import {
   Code,
   RotateCcw,
   Settings,
-  Zap
+  Zap,
+  Trash2
 } from 'lucide-react';
 
 const PythonEditor = () => {
@@ -68,6 +69,8 @@ print(f"Squared numbers: {squared}")
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [fontSize, setFontSize] = useState(14);
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
+  const [savedFiles, setSavedFiles] = useState<Array<{id: string, name: string, content: string, lastModified: Date}>>([]);
+  const [showFileManager, setShowFileManager] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 
   // Enhanced Python execution
@@ -181,6 +184,54 @@ print(f"Squared numbers: {squared}")
     });
   };
 
+  const saveToWorkspace = () => {
+    const newFile = {
+      id: Date.now().toString(),
+      name: fileName,
+      content: code,
+      lastModified: new Date()
+    };
+    
+    setSavedFiles(prev => {
+      const existingIndex = prev.findIndex(f => f.name === fileName);
+      if (existingIndex >= 0) {
+        const updated = [...prev];
+        updated[existingIndex] = newFile;
+        return updated;
+      }
+      return [...prev, newFile];
+    });
+    
+    localStorage.setItem('python-editor-files', JSON.stringify([...savedFiles.filter(f => f.name !== fileName), newFile]));
+    
+    toast({
+      title: "File Saved to Workspace",
+      description: `${fileName} saved to local workspace`
+    });
+  };
+
+  const loadFromWorkspace = (file: {id: string, name: string, content: string, lastModified: Date}) => {
+    setCode(file.content);
+    setFileName(file.name);
+    setShowFileManager(false);
+    
+    toast({
+      title: "File Loaded",
+      description: `${file.name} loaded from workspace`
+    });
+  };
+
+  const deleteFromWorkspace = (fileId: string) => {
+    setSavedFiles(prev => prev.filter(f => f.id !== fileId));
+    const updatedFiles = savedFiles.filter(f => f.id !== fileId);
+    localStorage.setItem('python-editor-files', JSON.stringify(updatedFiles));
+    
+    toast({
+      title: "File Deleted",
+      description: "File removed from workspace"
+    });
+  };
+
   const loadFile = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -217,6 +268,16 @@ print(f"Squared numbers: {squared}")
   useEffect(() => {
     if (textareaRef.current) {
       textareaRef.current.focus();
+    }
+    
+    // Load saved files from localStorage
+    const saved = localStorage.getItem('python-editor-files');
+    if (saved) {
+      try {
+        setSavedFiles(JSON.parse(saved));
+      } catch (error) {
+        console.error('Error loading saved files:', error);
+      }
     }
   }, []);
 
@@ -302,7 +363,25 @@ print(f"Squared numbers: {squared}")
                   size="sm"
                 >
                   <Download className="h-4 w-4 mr-1" />
-                  Save
+                  Download
+                </Button>
+                <Button
+                  onClick={saveToWorkspace}
+                  variant="outline"
+                  size="sm"
+                  className="bg-blue-50 border-blue-300 text-blue-700 hover:bg-blue-100"
+                >
+                  <Save className="h-4 w-4 mr-1" />
+                  Save to Workspace
+                </Button>
+                <Button
+                  onClick={() => setShowFileManager(!showFileManager)}
+                  variant="outline"
+                  size="sm"
+                  className={showFileManager ? "bg-blue-100 border-blue-400" : ""}
+                >
+                  <FolderOpen className="h-4 w-4 mr-1" />
+                  Files ({savedFiles.length})
                 </Button>
                 <label>
                   <Button
@@ -360,6 +439,53 @@ print(f"Squared numbers: {squared}")
               </div>
             </div>
           </div>
+
+          {/* File Manager Sidebar */}
+          {showFileManager && (
+            <div className="bg-white/95 backdrop-blur-sm border-b border-white/20 p-4">
+              <Card className="max-h-48 overflow-y-auto">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm">Workspace Files</CardTitle>
+                </CardHeader>
+                <CardContent className="pt-0">
+                  {savedFiles.length === 0 ? (
+                    <p className="text-sm text-gray-500 py-4 text-center">No saved files</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {savedFiles.map((file) => (
+                        <div key={file.id} className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium truncate">{file.name}</p>
+                            <p className="text-xs text-gray-500">
+                              {new Date(file.lastModified).toLocaleString()}
+                            </p>
+                          </div>
+                          <div className="flex space-x-1">
+                            <Button
+                              onClick={() => loadFromWorkspace(file)}
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 w-6 p-0"
+                            >
+                              <FolderOpen className="h-3 w-3" />
+                            </Button>
+                            <Button
+                              onClick={() => deleteFromWorkspace(file.id)}
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 w-6 p-0 text-red-600 hover:text-red-700"
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          )}
 
           {/* Editor and Output Layout */}
           <div className="flex-1 overflow-hidden p-6">

@@ -69,15 +69,26 @@ const LiveCollaborativeNotebook = ({
   const [showCanvas, setShowCanvas] = useState(false);
   const [showUsersList, setShowUsersList] = useState(false);
   const [lastSyncTime, setLastSyncTime] = useState<Date>(new Date());
+  const [isCollaborationActive, setIsCollaborationActive] = useState(false);
+  const [syncStatus, setSyncStatus] = useState<'synced' | 'syncing' | 'error'>('synced');
   
   const textareaRefs = useRef<{ [key: string]: HTMLTextAreaElement | null }>({});
   const channelRef = useRef<any>(null);
+  const syncTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     if (classId && user) {
       initializeCollaboration();
       setupRealtimeSubscription();
+      setIsCollaborationActive(true);
     }
+    
+    return () => {
+      setIsCollaborationActive(false);
+      if (syncTimeoutRef.current) {
+        clearTimeout(syncTimeoutRef.current);
+      }
+    };
 
     return () => {
       if (channelRef.current) {
