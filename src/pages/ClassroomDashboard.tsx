@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import ClassManagement from '@/components/ClassManagement';
@@ -28,7 +29,8 @@ import {
   ArrowLeft,
   Folder,
   Settings,
-  Blocks
+  Blocks,
+  FileText
 } from 'lucide-react';
 
 interface ClassData {
@@ -47,6 +49,7 @@ interface ClassData {
 type ViewMode = 'classes' | 'notebook' | 'monitoring' | 'profile' | 'chat' | 'assignments' | 'progress' | 'files' | 'settings' | 'gradebook';
 
 const ClassroomDashboard = () => {
+  const navigate = useNavigate();
   const { user, signOut } = useAuth();
   const [currentView, setCurrentView] = useState<ViewMode>('classes');
   const [userRole, setUserRole] = useState<'teacher' | 'student'>('student');
@@ -272,15 +275,15 @@ const ClassroomDashboard = () => {
                 Back to Classes
               </Button>
             ) : (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="text-white hover:bg-white/20"
-                onClick={() => window.location.href = '/'}
-              >
-                <Home className="h-4 w-4 mr-2" />
-                Dashboard
-              </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-white hover:bg-white/20"
+              onClick={() => navigate('/')}
+            >
+              <Home className="h-4 w-4 mr-2" />
+              Dashboard
+            </Button>
             )}
             
             <h1 className="text-xl font-bold text-white flex items-center">
@@ -340,7 +343,7 @@ const ClassroomDashboard = () => {
                   variant="ghost"
                   size="sm"
                   className="text-white hover:bg-white/20"
-                  onClick={() => window.open('/visual-coding', '_blank')}
+                  onClick={() => navigate('/visual-coding')}
                 >
                   <Blocks className="h-4 w-4 mr-2" />
                   Visual Coding
@@ -413,6 +416,26 @@ const ClassroomDashboard = () => {
                 >
                   <BookOpen className="h-4 w-4 mr-2" />
                   Classes
+                </Button>
+                
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-white hover:bg-white/20"
+                  onClick={() => navigate('/py-notebook')}
+                >
+                  <FileText className="h-4 w-4 mr-2" />
+                  Python Notebook
+                </Button>
+                
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-white hover:bg-white/20"
+                  onClick={() => navigate('/visual-coding')}
+                >
+                  <Blocks className="h-4 w-4 mr-2" />
+                  Visual Coding
                 </Button>
                 
                 <Button
