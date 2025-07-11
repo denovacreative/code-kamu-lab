@@ -25,7 +25,8 @@ import {
   Minimize2,
   Layout,
   Settings,
-  Palette
+  Palette,
+  Code
 } from 'lucide-react';
 
 interface NotebookCell {
@@ -288,7 +289,16 @@ const PyNotebook = () => {
               onClick={() => navigate('/')}
             >
               <Home className="h-4 w-4 mr-2" />
-              Back to Dashboard
+              Dashboard
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-white hover:bg-white/20"
+              onClick={() => navigate('/python-editor')}
+            >
+              <Code className="h-4 w-4 mr-2" />
+              Python Editor
             </Button>
             <h1 className="text-xl font-bold text-white flex items-center">
               <FileText className="h-5 w-5 mr-2" />

@@ -30,7 +30,8 @@ import {
   Folder,
   Settings,
   Blocks,
-  FileText
+  FileText,
+  Code
 } from 'lucide-react';
 
 interface ClassData {
@@ -436,6 +437,16 @@ const ClassroomDashboard = () => {
                 >
                   <Blocks className="h-4 w-4 mr-2" />
                   Visual Coding
+                </Button>
+                
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-white hover:bg-white/20"
+                  onClick={() => navigate('/python-editor')}
+                >
+                  <Code className="h-4 w-4 mr-2" />
+                  Python Editor
                 </Button>
                 
                 <Button

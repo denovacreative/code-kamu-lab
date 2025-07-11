@@ -54,7 +54,7 @@ const Dashboard = () => {
           age: "Ages 12+",
           icon: Code,
           color: "bg-pictoblox-blue",
-          route: "/py-editor"
+          route: "/python-editor"
         },
         {
           title: "Py Notebook",
@@ -172,7 +172,7 @@ const Dashboard = () => {
                       <Button 
                         className="w-full bg-[hsl(var(--pictoblox-purple))] hover:bg-[hsl(var(--pictoblox-purple-dark))] text-white"
                         onClick={() => {
-                          if (item.route === '/py-notebook' || item.route === '/classroom' || item.route === '/visual-coding') {
+                          if (item.route === '/python-editor' || item.route === '/py-notebook' || item.route === '/classroom' || item.route === '/visual-coding') {
                             navigate(item.route);
                           } else {
                             console.log(`Navigate to ${item.route} - Coming Soon!`);
