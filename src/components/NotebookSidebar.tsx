@@ -20,7 +20,8 @@ import {
   Image,
   Settings,
   ChevronRight,
-  ChevronDown
+  ChevronDown,
+  Trash2
 } from 'lucide-react';
 
 interface NotebookFile {
@@ -44,6 +45,7 @@ const NotebookSidebar = ({ onFileSelect, onLoadContent }: NotebookSidebarProps) 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedFile, setSelectedFile] = useState<string | null>(null);
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set(['samples', 'notebooks']));
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [files, setFiles] = useState<NotebookFile[]>([
     {
       id: 'notebooks',
@@ -296,6 +298,98 @@ print(df.describe())`
     }
   };
 
+  const handleUploadClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !user) return;
+
+    const fileId = `user-upload-${Date.now()}`;
+    const filePath = `${user.id}/${file.name}`;
+
+    try {
+      // Show loading toast
+      const { dismiss } = toast({
+        title: "Uploading File...",
+        description: `Uploading ${file.name}, please wait.`,
+        duration: 120000, // 2 minutes timeout
+      });
+
+      // Upload to Supabase Storage
+      const { data, error } = await supabase.storage
+        .from('notebook-files')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: true,
+        });
+
+      if (error) {
+        throw error;
+      }
+
+      // Read file content for local state
+      const content = await file.text();
+      const fileType = file.name.endsWith('.py') ? 'python' :
+                       file.name.endsWith('.ipynb') ? 'notebook' :
+                       file.name.endsWith('.csv') ? 'data' : 'file';
+
+      const newFile: NotebookFile = {
+        id: fileId,
+        name: file.name,
+        type: fileType as any,
+        size: `${(file.size / 1024).toFixed(2)} KB`,
+        modified: new Date().toLocaleTimeString(),
+        content: content,
+      };
+
+      // Update state
+      setFiles(prevFiles => {
+        const userUploadsFolder = prevFiles.find(f => f.id === 'user-uploads');
+        if (userUploadsFolder) {
+          return prevFiles.map(f =>
+            f.id === 'user-uploads' ? { ...f, children: [...(f.children || []), newFile] } : f
+          );
+        } else {
+          return [
+            ...prevFiles,
+            {
+              id: 'user-uploads',
+              name: 'My Uploads',
+              type: 'folder',
+              children: [newFile],
+            },
+          ];
+        }
+      });
+
+      setExpandedFolders(prev => new Set(prev).add('user-uploads'));
+      setSelectedFile(newFile.id);
+      onLoadContent(content, file.name);
+
+      // Dismiss loading toast and show success
+      dismiss();
+      toast({
+        title: "Upload Successful",
+        description: `${file.name} has been uploaded and loaded.`,
+      });
+
+    } catch (error) {
+      console.error("Error uploading file:", error);
+      toast({
+        title: "Upload Failed",
+        description: `Failed to upload ${file.name}. Please try again.`,
+        variant: "destructive",
+      });
+    } finally {
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
+  };
+
   const handleFileDoubleClick = (file: NotebookFile) => {
     if (file.type === 'folder') return;
     
@@ -416,10 +510,17 @@ print(df.describe())`
               <Plus className="h-3 w-3 mr-1" />
               New
             </Button>
-            <Button size="sm" variant="outline" className="h-7 text-xs">
+            <Button size="sm" variant="outline" className="h-7 text-xs" onClick={handleUploadClick}>
               <Upload className="h-3 w-3 mr-1" />
               Upload
             </Button>
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleFileChange}
+              className="hidden"
+              accept=".py,.ipynb,.csv,.txt,.md"
+            />
           </div>
           <Badge variant="secondary" className="text-xs">
             {files.reduce((acc, folder) => acc + (folder.children?.length || 0), 0)} files
