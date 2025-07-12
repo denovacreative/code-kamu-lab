@@ -55,10 +55,47 @@ const ClassroomDashboard = () => {
   const [currentView, setCurrentView] = useState<ViewMode>('classes');
   const [userRole, setUserRole] = useState<'teacher' | 'student'>('student');
   const [selectedClass, setSelectedClass] = useState<ClassData | null>(null);
+  const [hasUnreadMessages, setHasUnreadMessages] = useState(false);
 
   useEffect(() => {
     loadUserRole();
   }, [user]);
+
+  // Setup chat notifications
+  useEffect(() => {
+    if (!selectedClass || !user) return;
+
+    const channel = supabase
+      .channel(`class-chat-notifications-${selectedClass.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'class_messages',
+          filter: `class_id=eq.${selectedClass.id}`
+        },
+        (payload) => {
+          const newMessage = payload.new as any;
+          // Only show notification if message is from someone else and we're not in chat view
+          if (newMessage.user_id !== user.id && currentView !== 'chat') {
+            setHasUnreadMessages(true);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [selectedClass, user, currentView]);
+
+  // Clear notifications when entering chat
+  useEffect(() => {
+    if (currentView === 'chat') {
+      setHasUnreadMessages(false);
+    }
+  }, [currentView]);
 
   const loadUserRole = async () => {
     if (!user) return;
@@ -326,7 +363,12 @@ const ClassroomDashboard = () => {
                   className={getNavButtonClassName('chat')}
                   onClick={() => setCurrentView('chat')}
                 >
-                  <MessageCircle className="h-4 w-4 mr-2" />
+                  <div className="relative">
+                    <MessageCircle className="h-4 w-4 mr-2" />
+                    {hasUnreadMessages && (
+                      <div className="absolute -top-1 -right-1 h-2 w-2 bg-red-500 rounded-full animate-pulse" />
+                    )}
+                  </div>
                   Chat
                 </Button>
                 

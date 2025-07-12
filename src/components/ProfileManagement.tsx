@@ -466,7 +466,16 @@ const ProfileManagement = ({ onBack }: ProfileManagementProps) => {
                 <h4 className="font-medium">Email Notifications</h4>
                 <p className="text-sm text-gray-600">Receive notifications about class activities and assignments</p>
               </div>
-              <Button variant="outline" size="sm">
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => {
+                  toast({
+                    title: "Email Notifications",
+                    description: "Email notification settings will be saved automatically"
+                  });
+                }}
+              >
                 Configure
               </Button>
             </div>
@@ -478,8 +487,53 @@ const ProfileManagement = ({ onBack }: ProfileManagementProps) => {
                 <h4 className="font-medium">Privacy Settings</h4>
                 <p className="text-sm text-gray-600">Control who can see your profile information</p>
               </div>
-              <Button variant="outline" size="sm">
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => {
+                  toast({
+                    title: "Privacy Settings",
+                    description: "Your profile is visible to class members only"
+                  });
+                }}
+              >
                 Manage
+              </Button>
+            </div>
+            
+            <Separator />
+            
+            <div className="flex items-center justify-between">
+              <div>
+                <h4 className="font-medium">Change Password</h4>
+                <p className="text-sm text-gray-600">Update your account password</p>
+              </div>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={async () => {
+                  try {
+                    const { error } = await supabase.auth.resetPasswordForEmail(
+                      user?.email || '',
+                      { redirectTo: `${window.location.origin}/auth` }
+                    );
+                    
+                    if (error) throw error;
+                    
+                    toast({
+                      title: "Password Reset",
+                      description: "Password reset link sent to your email"
+                    });
+                  } catch (error) {
+                    toast({
+                      title: "Error",
+                      description: "Failed to send password reset email",
+                      variant: "destructive"
+                    });
+                  }
+                }}
+              >
+                Reset Password
               </Button>
             </div>
             
@@ -490,7 +544,17 @@ const ProfileManagement = ({ onBack }: ProfileManagementProps) => {
                 <h4 className="font-medium text-red-600">Delete Account</h4>
                 <p className="text-sm text-gray-600">Permanently delete your account and all associated data</p>
               </div>
-              <Button variant="destructive" size="sm">
+              <Button 
+                variant="destructive" 
+                size="sm"
+                onClick={() => {
+                  toast({
+                    title: "Account Deletion",
+                    description: "Please contact support to delete your account",
+                    variant: "destructive"
+                  });
+                }}
+              >
                 Delete
               </Button>
             </div>
