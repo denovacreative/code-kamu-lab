@@ -1,4 +1,5 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useReducer } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -26,7 +27,8 @@ import {
   Search,
   Calculator,
   Image as ImageIcon,
-  Plus
+  Plus,
+  Home
 } from 'lucide-react';
 
 interface Block {
@@ -185,13 +187,25 @@ const BLOCK_CATEGORIES = {
   }
 };
 
-const VisualCodingDragDrop = () => {
-  const [selectedCategory, setSelectedCategory] = useState<keyof typeof BLOCK_CATEGORIES>('events');
-  const [droppedBlocks, setDroppedBlocks] = useState<DroppedBlock[]>([]);
-  const [draggedBlock, setDraggedBlock] = useState<Block | null>(null);
-  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
-  const [isRunning, setIsRunning] = useState(false);
-  const [sprites, setSprites] = useState<Sprite[]>([
+type State = {
+  sprites: Sprite[];
+  selectedSprite: string;
+  droppedBlocks: DroppedBlock[];
+  isRunning: boolean;
+};
+
+type Action =
+  | { type: 'ADD_SPRITE'; payload: Sprite }
+  | { type: 'SELECT_SPRITE'; payload: string }
+  | { type: 'UPDATE_SPRITE'; payload: Partial<Sprite> & { id: string } }
+  | { type: 'ADD_BLOCK'; payload: DroppedBlock }
+  | { type: 'REMOVE_BLOCK'; payload: string }
+  | { type: 'UPDATE_BLOCK_PARAM'; payload: { uniqueId: string; paramIndex: number; value: any } }
+  | { type: 'CLEAR_BLOCKS' }
+  | { type: 'SET_RUNNING'; payload: boolean };
+
+const initialState: State = {
+  sprites: [
     {
       id: 'sprite1',
       name: 'Cat',
@@ -203,8 +217,63 @@ const VisualCodingDragDrop = () => {
       visible: true,
       scripts: []
     }
-  ]);
-  const [selectedSprite, setSelectedSprite] = useState('sprite1');
+  ],
+  selectedSprite: 'sprite1',
+  droppedBlocks: [],
+  isRunning: false,
+};
+
+function reducer(state: State, action: Action): State {
+  switch (action.type) {
+    case 'ADD_SPRITE':
+      return { ...state, sprites: [...state.sprites, action.payload] };
+    case 'SELECT_SPRITE':
+      return { ...state, selectedSprite: action.payload };
+    case 'UPDATE_SPRITE':
+      return {
+        ...state,
+        sprites: state.sprites.map(s =>
+          s.id === action.payload.id ? { ...s, ...action.payload } : s
+        ),
+      };
+    case 'ADD_BLOCK':
+      return { ...state, droppedBlocks: [...state.droppedBlocks, action.payload] };
+    case 'REMOVE_BLOCK':
+      return {
+        ...state,
+        droppedBlocks: state.droppedBlocks.filter(b => b.uniqueId !== action.payload),
+      };
+    case 'UPDATE_BLOCK_PARAM':
+      return {
+        ...state,
+        droppedBlocks: state.droppedBlocks.map(block => {
+          if (block.uniqueId === action.payload.uniqueId && block.parameters) {
+            const newParameters = [...block.parameters];
+            newParameters[action.payload.paramIndex] = {
+              ...newParameters[action.payload.paramIndex],
+              value: action.payload.value,
+            };
+            return { ...block, parameters: newParameters };
+          }
+          return block;
+        }),
+      };
+    case 'CLEAR_BLOCKS':
+      return { ...state, droppedBlocks: [] };
+    case 'SET_RUNNING':
+      return { ...state, isRunning: action.payload };
+    default:
+      return state;
+  }
+}
+
+const VisualCodingDragDrop = () => {
+  const navigate = useNavigate();
+  const [state, dispatch] = useReducer(reducer, initialState);
+  const { sprites, selectedSprite, droppedBlocks, isRunning } = state;
+  const [selectedCategory, setSelectedCategory] = useState<keyof typeof BLOCK_CATEGORIES>('events');
+  const [draggedBlock, setDraggedBlock] = useState<Block | null>(null);
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [uploadedSprites, setUploadedSprites] = useState<string[]>([]);
 
   const scriptsAreaRef = useRef<HTMLDivElement>(null);
@@ -245,25 +314,18 @@ const VisualCodingDragDrop = () => {
       uniqueId: `${draggedBlock.id}_${Date.now()}`
     };
 
-    setDroppedBlocks(prev => [...prev, newBlock]);
+    dispatch({ type: 'ADD_BLOCK', payload: newBlock });
     setDraggedBlock(null);
   };
 
   // Remove block from scripts area
   const removeBlock = (uniqueId: string) => {
-    setDroppedBlocks(prev => prev.filter(block => block.uniqueId !== uniqueId));
+    dispatch({ type: 'REMOVE_BLOCK', payload: uniqueId });
   };
 
   // Update block parameter
   const updateBlockParameter = (uniqueId: string, paramIndex: number, value: any) => {
-    setDroppedBlocks(prev => prev.map(block => {
-      if (block.uniqueId === uniqueId && block.parameters) {
-        const newParameters = [...block.parameters];
-        newParameters[paramIndex] = { ...newParameters[paramIndex], value };
-        return { ...block, parameters: newParameters };
-      }
-      return block;
-    }));
+    dispatch({ type: 'UPDATE_BLOCK_PARAM', payload: { uniqueId, paramIndex, value } });
   };
 
   // Handle sprite upload
@@ -288,7 +350,7 @@ const VisualCodingDragDrop = () => {
           scripts: []
         };
         
-        setSprites(prev => [...prev, newSprite]);
+        dispatch({ type: 'ADD_SPRITE', payload: newSprite });
       };
       reader.readAsDataURL(file);
     }
@@ -296,7 +358,7 @@ const VisualCodingDragDrop = () => {
 
   // Execute blocks (simple simulation)
   const executeBlocks = () => {
-    setIsRunning(true);
+    dispatch({ type: 'SET_RUNNING', payload: true });
     
     // Group blocks by sprite and script
     const scriptsBySprite = groupBlocksByScript();
@@ -308,7 +370,7 @@ const VisualCodingDragDrop = () => {
       });
     });
     
-    setTimeout(() => setIsRunning(false), 3000);
+    setTimeout(() => dispatch({ type: 'SET_RUNNING', payload: false }), 3000);
   };
 
   const groupBlocksByScript = () => {
@@ -340,45 +402,42 @@ const VisualCodingDragDrop = () => {
   };
 
   const executeBlock = async (spriteId: string, block: DroppedBlock) => {
-    setSprites(prev => prev.map(sprite => {
-      if (sprite.id === spriteId) {
-        switch (block.id) {
-          case 'move_steps':
-            const steps = block.parameters?.[0]?.value || 10;
-            return {
-              ...sprite,
-              x: Math.min(Math.max(sprite.x + steps, 0), 480),
-              y: sprite.y
-            };
-          case 'turn_right':
-            const degrees = block.parameters?.[0]?.value || 15;
-            return {
-              ...sprite,
-              rotation: (sprite.rotation + degrees) % 360
-            };
-          case 'goto_xy':
-            const x = block.parameters?.[0]?.value || 0;
-            const y = block.parameters?.[1]?.value || 0;
-            return {
-              ...sprite,
-              x: Math.min(Math.max(x + 240, 0), 480),
-              y: Math.min(Math.max(180 - y, 0), 360)
-            };
-          case 'show':
-            return { ...sprite, visible: true };
-          case 'hide':
-            return { ...sprite, visible: false };
-          default:
-            return sprite;
-        }
-      }
-      return sprite;
-    }));
+    const sprite = sprites.find(s => s.id === spriteId);
+    if (!sprite) return;
+
+    let newSpriteState: Partial<Sprite> & { id: string } = { id: spriteId };
+
+    switch (block.id) {
+      case 'move_steps':
+        const steps = block.parameters?.[0]?.value || 10;
+        newSpriteState.x = Math.min(Math.max(sprite.x + steps, 0), 480);
+        break;
+      case 'turn_right':
+        const degrees = block.parameters?.[0]?.value || 15;
+        newSpriteState.rotation = (sprite.rotation + degrees) % 360;
+        break;
+      case 'goto_xy':
+        const x = block.parameters?.[0]?.value || 0;
+        const y = block.parameters?.[1]?.value || 0;
+        newSpriteState.x = Math.min(Math.max(x + 240, 0), 480);
+        newSpriteState.y = Math.min(Math.max(180 - y, 0), 360);
+        break;
+      case 'show':
+        newSpriteState.visible = true;
+        break;
+      case 'hide':
+        newSpriteState.visible = false;
+        break;
+    }
+
+    if (Object.keys(newSpriteState).length > 1) {
+      dispatch({ type: 'UPDATE_SPRITE', payload: newSpriteState });
+    }
   };
 
   // Clear all blocks
   const clearBlocks = () => {
-    setDroppedBlocks([]);
+    dispatch({ type: 'CLEAR_BLOCKS' });
   };
 
   // Render block component
@@ -460,7 +519,13 @@ const VisualCodingDragDrop = () => {
       {/* Header */}
       <div className="bg-white border-b p-4">
         <div className="flex items-center justify-between">
-          <h1 className="text-xl font-bold text-gray-900">Visual Coding Studio</h1>
+          <div className="flex items-center space-x-4">
+            <h1 className="text-xl font-bold text-gray-900">Visual Coding Studio</h1>
+            <Button variant="outline" size="sm" onClick={() => navigate('/')}>
+              <Home className="h-4 w-4 mr-2" />
+              Back to Dashboard
+            </Button>
+          </div>
           <div className="flex items-center space-x-2">
             <Button
               onClick={executeBlocks}
