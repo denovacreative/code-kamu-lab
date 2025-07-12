@@ -12,6 +12,8 @@ import ClassProgressDashboard from '@/components/ClassProgressDashboard';
 import ClassSettings from '@/components/ClassSettings';
 import ClassFileManager from '@/components/ClassFileManager';
 import Gradebook from '@/components/Gradebook';
+import ClassroomWhiteboard from '@/components/ClassroomWhiteboard';
+import InteractivePoll from '@/components/InteractivePoll';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -47,7 +49,7 @@ interface ClassData {
   member_count?: number;
 }
 
-type ViewMode = 'classes' | 'notebook' | 'monitoring' | 'profile' | 'chat' | 'assignments' | 'progress' | 'files' | 'settings' | 'gradebook';
+type ViewMode = 'classes' | 'notebook' | 'monitoring' | 'profile' | 'chat' | 'assignments' | 'progress' | 'files' | 'settings' | 'gradebook' | 'whiteboard' | 'polls';
 
 const ClassroomDashboard = () => {
   const navigate = useNavigate();
