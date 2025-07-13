@@ -33,7 +33,9 @@ import {
   Settings,
   Blocks,
   FileText,
-  Code
+  Code,
+  Palette,
+  BarChart3
 } from 'lucide-react';
 
 interface ClassData {
@@ -293,6 +295,40 @@ const ClassroomDashboard = () => {
           </div>
         );
       
+      case 'whiteboard':
+        return selectedClass ? (
+          <div className="p-6">
+            <ClassroomWhiteboard 
+              classId={selectedClass.id} 
+              userRole={userRole}
+            />
+          </div>
+        ) : (
+          <div className="text-center py-12">
+            <p className="text-white">No class selected</p>
+            <Button onClick={handleBackToClasses} className="mt-4 bg-white/20 text-white hover:bg-white/30">
+              Back to Classes
+            </Button>
+          </div>
+        );
+      
+      case 'polls':
+        return selectedClass ? (
+          <div className="p-6">
+            <InteractivePoll 
+              classId={selectedClass.id} 
+              userRole={userRole}
+            />
+          </div>
+        ) : (
+          <div className="text-center py-12">
+            <p className="text-white">No class selected</p>
+            <Button onClick={handleBackToClasses} className="mt-4 bg-white/20 text-white hover:bg-white/30">
+              Back to Classes
+            </Button>
+          </div>
+        );
+      
       default:
         return null;
     }
@@ -436,17 +472,37 @@ const ClassroomDashboard = () => {
                        Gradebook
                      </Button>
                      
-                     <Button
-                       variant="ghost"
-                       size="sm"
-                       className={getNavButtonClassName('settings')}
-                       onClick={() => setCurrentView('settings')}
-                     >
-                       <Settings className="h-4 w-4 mr-2" />
-                       Settings
-                     </Button>
-                   </>
-                 )}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className={getNavButtonClassName('whiteboard')}
+                        onClick={() => setCurrentView('whiteboard')}
+                      >
+                        <Palette className="h-4 w-4 mr-2" />
+                        Whiteboard
+                      </Button>
+                      
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className={getNavButtonClassName('polls')}
+                        onClick={() => setCurrentView('polls')}
+                      >
+                        <BarChart3 className="h-4 w-4 mr-2" />
+                        Polls
+                      </Button>
+                      
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className={getNavButtonClassName('settings')}
+                        onClick={() => setCurrentView('settings')}
+                      >
+                        <Settings className="h-4 w-4 mr-2" />
+                        Settings
+                      </Button>
+                    </>
+                  )}
               </>
             )}
             

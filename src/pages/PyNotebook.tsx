@@ -10,6 +10,7 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import NotebookSidebar from '@/components/NotebookSidebar';
 import NotebookCanvas from '@/components/NotebookCanvas';
+import NotebookEnhancements from '@/components/NotebookEnhancements';
 import { 
   Play, 
   Plus, 
@@ -26,7 +27,8 @@ import {
   Layout,
   Settings,
   Palette,
-  Code
+  Code,
+  Lightbulb
 } from 'lucide-react';
 
 interface NotebookCell {
@@ -48,6 +50,7 @@ const PyNotebook = () => {
   const [showTerminal, setShowTerminal] = useState(false);
   const [showCanvas, setShowCanvas] = useState(false);
   const [showSidebar, setShowSidebar] = useState(true);
+  const [showEnhancements, setShowEnhancements] = useState(false);
   const [terminalInput, setTerminalInput] = useState('');
   const [terminalHistory, setTerminalHistory] = useState<string[]>([
     'Python 3.9.0 - Interactive Terminal',
@@ -401,6 +404,15 @@ const PyNotebook = () => {
                   <Layout className="h-4 w-4 mr-1" />
                   Files
                 </Button>
+                <Button
+                  onClick={() => setShowEnhancements(!showEnhancements)}
+                  variant={showEnhancements ? "default" : "outline"}
+                  size="sm"
+                  className={showEnhancements ? "bg-[hsl(var(--pictoblox-green))]" : ""}
+                >
+                  <Lightbulb className="h-4 w-4 mr-1" />
+                  Assistant
+                </Button>
                 <Badge variant="secondary" className="bg-green-100 text-green-700">
                   {cells.length} cells
                 </Badge>
@@ -413,7 +425,7 @@ const PyNotebook = () => {
 
           {/* Main Content Layout */}
           <div className="flex-1 overflow-hidden p-6">
-            <div className={`grid gap-6 h-full ${showTerminal || showCanvas ? 'grid-cols-1 lg:grid-cols-2' : 'grid-cols-1'}`}>
+            <div className={`grid gap-6 h-full ${showTerminal || showCanvas || showEnhancements ? 'grid-cols-1 lg:grid-cols-2' : 'grid-cols-1'}`}>
               {/* Notebook Cells */}
               <div className="space-y-4 overflow-y-auto">
                 {cells.map((cell, index) => (
@@ -549,7 +561,7 @@ const PyNotebook = () => {
               </div>
 
               {/* Right Panel */}
-              {(showTerminal || showCanvas) && (
+              {(showTerminal || showCanvas || showEnhancements) && (
                 <div className="flex flex-col gap-6 overflow-y-auto">
                   {/* Terminal Panel */}
                   {showTerminal && (
@@ -599,13 +611,34 @@ const PyNotebook = () => {
                       onToggle={() => setShowCanvas(false)} 
                     />
                   )}
+
+                  {/* Notebook Enhancements Panel */}
+                  {showEnhancements && (
+                    <NotebookEnhancements 
+                      onInsertCode={(code) => {
+                        if (activeCell) {
+                          updateCellContent(activeCell, code);
+                        } else {
+                          addCell('code');
+                          const newCell = cells[cells.length - 1];
+                          updateCellContent(newCell?.id || '', code);
+                        }
+                      }}
+                      onAddHint={(hint, type) => {
+                        toast({
+                          title: `${type} hint added`,
+                          description: hint,
+                        });
+                      }}
+                    />
+                  )}
                 </div>
               )}
             </div>
           </div>
 
           {/* Help Section */}
-          {!showTerminal && !showCanvas && (
+          {!showTerminal && !showCanvas && !showEnhancements && (
             <div className="p-6">
               <Card className="bg-blue-50 border-blue-200">
                 <CardHeader>
