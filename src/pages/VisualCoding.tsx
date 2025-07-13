@@ -1,7 +1,7 @@
-import VisualCodingDragDrop from '@/components/VisualCodingDragDrop';
+import EnhancedVisualCoding from '@/components/EnhancedVisualCoding';
 
 const VisualCoding = () => {
-  return <VisualCodingDragDrop />;
+  return <EnhancedVisualCoding />;
 };
 
 export default VisualCoding;
