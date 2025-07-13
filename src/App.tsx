@@ -28,13 +28,13 @@ const App = () => (
             <Route path="/" element={<Landing />} />
             <Route path="/login" element={<AuthPage />} />
             <Route path="/register" element={<AuthPage />} />
-            <Route 
+            <Route
               path="/dashboard"
               element={
                 <ProtectedRoute>
                   <Index />
                 </ProtectedRoute>
-              } 
+              }
             />
             <Route 
               path="/py-notebook" 
