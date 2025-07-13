@@ -1,5 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback, useReducer } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { DndProvider, useDrag, useDrop } from 'react-dnd';
+import { HTML5Backend } from 'react-dnd-html5-backend';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -267,56 +269,91 @@ function reducer(state: State, action: Action): State {
   }
 }
 
+const ItemTypes = {
+  BLOCK: 'block',
+};
+
+const DraggableBlock = ({ block, isDraggable, isInScript, onUpdate, onRemove }) => {
+  const [{ isDragging }, drag] = useDrag(() => ({
+    type: ItemTypes.BLOCK,
+    item: { ...block },
+    collect: (monitor) => ({
+      isDragging: !!monitor.isDragging(),
+    }),
+  }));
+
+  return (
+    <div
+      ref={drag}
+      style={{ opacity: isDragging ? 0.5 : 1 }}
+      className={`
+        relative inline-flex items-center px-3 py-2 rounded-lg text-white text-sm font-medium
+        ${isDraggable ? 'cursor-grab active:cursor-grabbing' : ''}
+        ${isInScript ? 'mb-1' : 'mb-2 mr-2'}
+        shadow-md hover:shadow-lg transition-shadow
+      `}
+
+    >
+      <span className="select-none">{block.name}</span>
+      {block.parameters && block.parameters.map((param, index) => (
+        <span key={index} className="mx-1">
+          <Input
+            type={param.type}
+            value={param.value}
+            onChange={(e) => onUpdate(block.uniqueId, index, e.target.value)}
+            className="inline w-16 h-6 text-xs text-black mx-1 px-1"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </span>
+      ))}
+      {isInScript && (
+        <Button
+          variant="ghost"
+          size="sm"
+          className="absolute -top-1 -right-1 h-5 w-5 p-0 text-white hover:bg-red-500 rounded-full"
+          onClick={() => onRemove(block.uniqueId)}
+        >
+          ×
+        </Button>
+      )}
+    </div>
+  );
+};
+
+
 const VisualCodingDragDrop = () => {
   const navigate = useNavigate();
   const [state, dispatch] = useReducer(reducer, initialState);
   const { sprites, selectedSprite, droppedBlocks, isRunning } = state;
   const [selectedCategory, setSelectedCategory] = useState<keyof typeof BLOCK_CATEGORIES>('events');
-  const [draggedBlock, setDraggedBlock] = useState<Block | null>(null);
-  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [uploadedSprites, setUploadedSprites] = useState<string[]>([]);
 
   const scriptsAreaRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Handle drag start from block palette
-  const handleDragStart = (e: React.DragEvent, block: Block) => {
-    setDraggedBlock(block);
-    const rect = e.currentTarget.getBoundingClientRect();
-    setDragOffset({
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top
-    });
-    e.dataTransfer.effectAllowed = 'copy';
-  };
+  const [, drop] = useDrop(() => ({
+    accept: ItemTypes.BLOCK,
+    drop: (item: Block, monitor) => {
+      const offset = monitor.getClientOffset();
+      if (offset && scriptsAreaRef.current) {
+        const rect = scriptsAreaRef.current.getBoundingClientRect();
+        const x = offset.x - rect.left;
+        const y = offset.y - rect.top;
 
-  // Handle drag over script area
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'copy';
-  };
+        const newBlock: DroppedBlock = {
+          ...(item as Block),
+          scriptId: `script_${Date.now()}`,
+          position: { x: Math.max(0, x), y: Math.max(0, y) },
+          uniqueId: `${item.id}_${Date.now()}`
+        };
 
-  // Handle drop in script area
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    
-    if (!draggedBlock || !scriptsAreaRef.current) return;
+        dispatch({ type: 'ADD_BLOCK', payload: newBlock });
+      }
+    },
+  }));
 
-    const rect = scriptsAreaRef.current.getBoundingClientRect();
-    const x = e.clientX - rect.left - dragOffset.x;
-    const y = e.clientY - rect.top - dragOffset.y;
-
-    const newBlock: DroppedBlock = {
-      ...draggedBlock,
-      scriptId: `script_${Date.now()}`,
-      position: { x: Math.max(0, x), y: Math.max(0, y) },
-      uniqueId: `${draggedBlock.id}_${Date.now()}`
-    };
-
-    dispatch({ type: 'ADD_BLOCK', payload: newBlock });
-    setDraggedBlock(null);
-  };
+  drop(scriptsAreaRef);
 
   // Remove block from scripts area
   const removeBlock = (uniqueId: string) => {
@@ -440,289 +477,228 @@ const VisualCodingDragDrop = () => {
     dispatch({ type: 'CLEAR_BLOCKS' });
   };
 
-  // Render block component
-  const renderBlock = (block: Block | DroppedBlock, isDraggable = true, isInScript = false) => {
-    const blockId = 'uniqueId' in block ? block.uniqueId : block.id;
-    
-    return (
-      <div
-        key={blockId}
-        className={`
-          relative inline-flex items-center px-3 py-2 rounded-lg text-white text-sm font-medium cursor-pointer
-          ${isDraggable ? 'cursor-grab active:cursor-grabbing' : ''}
-          ${isInScript ? 'mb-1' : 'mb-2 mr-2'}
-          shadow-md hover:shadow-lg transition-shadow
-        `}
-        style={{ backgroundColor: block.color }}
-        draggable={isDraggable}
-        onDragStart={(e) => isDraggable && handleDragStart(e, block)}
-      >
-        <span className="select-none">{block.name}</span>
-        
-        {/* Parameters */}
-        {block.parameters && block.parameters.map((param, index) => (
-          <span key={index} className="mx-1">
-            {param.type === 'number' ? (
-              <Input
-                type="number"
-                value={param.value || 0}
-                onChange={(e) => isInScript && 'uniqueId' in block && 
-                  updateBlockParameter(block.uniqueId, index, parseFloat(e.target.value) || 0)}
-                className="inline w-16 h-6 text-xs text-black mx-1 px-1"
-                onClick={(e) => e.stopPropagation()}
-              />
-            ) : param.type === 'text' ? (
-              <Input
-                type="text"
-                value={param.value || ''}
-                onChange={(e) => isInScript && 'uniqueId' in block && 
-                  updateBlockParameter(block.uniqueId, index, e.target.value)}
-                className="inline w-20 h-6 text-xs text-black mx-1 px-1"
-                onClick={(e) => e.stopPropagation()}
-              />
-            ) : param.type === 'dropdown' ? (
-              <select
-                value={param.value || param.options?.[0]}
-                onChange={(e) => isInScript && 'uniqueId' in block && 
-                  updateBlockParameter(block.uniqueId, index, e.target.value)}
-                className="inline h-6 text-xs text-black mx-1 px-1 rounded"
-                onClick={(e) => e.stopPropagation()}
-              >
-                {param.options?.map(option => (
-                  <option key={option} value={option}>{option}</option>
-                ))}
-              </select>
-            ) : null}
-          </span>
-        ))}
-        
-        {/* Remove button for script blocks */}
-        {isInScript && 'uniqueId' in block && (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="absolute -top-1 -right-1 h-5 w-5 p-0 text-white hover:bg-red-500 rounded-full"
-            onClick={(e) => {
-              e.stopPropagation();
-              removeBlock(block.uniqueId);
-            }}
-          >
-            ×
-          </Button>
-        )}
-      </div>
-    );
-  };
-
   return (
-    <div className="h-screen flex flex-col bg-gray-50">
-      {/* Header */}
-      <div className="bg-white border-b p-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <h1 className="text-xl font-bold text-gray-900">Visual Coding Studio</h1>
-            <Button variant="outline" size="sm" onClick={() => navigate('/')}>
-              <Home className="h-4 w-4 mr-2" />
-              Back to Dashboard
-            </Button>
-          </div>
-          <div className="flex items-center space-x-2">
-            <Button
-              onClick={executeBlocks}
-              disabled={isRunning || droppedBlocks.length === 0}
-              className="bg-green-600 hover:bg-green-700"
-            >
-              {isRunning ? (
-                <>
-                  <Square className="h-4 w-4 mr-2" />
-                  Running...
-                </>
-              ) : (
-                <>
-                  <Play className="h-4 w-4 mr-2" />
-                  Run
-                </>
-              )}
-            </Button>
-            <Button variant="outline" onClick={clearBlocks}>
-              <Trash2 className="h-4 w-4 mr-2" />
-              Clear
-            </Button>
-          </div>
-        </div>
-      </div>
-
-      <div className="flex-1 flex">
-        {/* Block Palette */}
-        <div className="w-64 bg-white border-r flex flex-col">
-          <div className="p-4 border-b">
-            <h2 className="font-semibold text-gray-900 mb-3">Block Palette</h2>
-            <div className="space-y-1">
-              {Object.entries(BLOCK_CATEGORIES).map(([key, category]) => {
-                const IconComponent = category.icon;
-                return (
-                  <Button
-                    key={key}
-                    variant={selectedCategory === key ? "default" : "ghost"}
-                    size="sm"
-                    onClick={() => setSelectedCategory(key as keyof typeof BLOCK_CATEGORIES)}
-                    className="w-full justify-start"
-                  >
-                    <IconComponent className="h-4 w-4 mr-2" />
-                    {category.name}
-                  </Button>
-                );
-              })}
-            </div>
-          </div>
-          
-          <div className="flex-1 p-4 overflow-y-auto">
-            <div className="space-y-2">
-              {BLOCK_CATEGORIES[selectedCategory].blocks.map((block) => 
-                renderBlock(block, true, false)
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Main Workspace */}
-        <div className="flex-1 flex flex-col">
-          {/* Stage */}
-          <div className="h-80 bg-white border-b p-4">
-            <Card className="h-full">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm">Stage</CardTitle>
-              </CardHeader>
-              <CardContent className="h-full p-2">
-                <div 
-                  ref={stageRef}
-                  className="relative w-full h-full bg-gray-100 border-2 border-dashed border-gray-300 rounded overflow-hidden"
-                >
-                  {sprites.map((sprite) => (
-                    <div
-                      key={sprite.id}
-                      className={`absolute transition-all duration-500 ${sprite.visible ? 'opacity-100' : 'opacity-0'}`}
-                      style={{
-                        left: sprite.x,
-                        top: sprite.y,
-                        transform: `rotate(${sprite.rotation - 90}deg) scale(${sprite.size / 100})`,
-                        transformOrigin: 'center'
-                      }}
-                    >
-                      {sprite.costume.startsWith('data:') ? (
-                        <img src={sprite.costume} alt={sprite.name} className="w-8 h-8" />
-                      ) : (
-                        <span className="text-2xl">{sprite.costume}</span>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Scripts Area */}
-          <div className="flex-1 p-4">
-            <Card className="h-full">
-              <CardHeader className="pb-2">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-sm">Scripts</CardTitle>
-                  <Badge variant="outline" className="text-xs">
-                    {droppedBlocks.length} blocks
-                  </Badge>
-                </div>
-              </CardHeader>
-              <CardContent className="h-full p-2">
-                <div
-                  ref={scriptsAreaRef}
-                  className="relative w-full h-full bg-gray-50 border-2 border-dashed border-gray-300 rounded p-4 overflow-auto"
-                  onDragOver={handleDragOver}
-                  onDrop={handleDrop}
-                >
-                  {droppedBlocks.length === 0 ? (
-                    <div className="absolute inset-0 flex items-center justify-center text-gray-400">
-                      <div className="text-center">
-                        <Box className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                        <p>Drag blocks here to create your program</p>
-                      </div>
-                    </div>
-                  ) : (
-                    droppedBlocks.map((block) => (
-                      <div
-                        key={block.uniqueId}
-                        className="absolute"
-                        style={{
-                          left: block.position.x,
-                          top: block.position.y
-                        }}
-                      >
-                        {renderBlock(block, false, true)}
-                      </div>
-                    ))
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-
-        {/* Sprite Panel */}
-        <div className="w-64 bg-white border-l flex flex-col">
-          <div className="p-4 border-b">
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="font-semibold text-gray-900">Sprites</h2>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => fileInputRef.current?.click()}
-              >
-                <Plus className="h-4 w-4" />
+    <DndProvider backend={HTML5Backend}>
+      <div className="h-screen flex flex-col bg-gray-50">
+        {/* Header */}
+        <div className="bg-white border-b p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <h1 className="text-xl font-bold text-gray-900">Visual Coding Studio</h1>
+              <Button variant="outline" size="sm" onClick={() => navigate('/')}>
+                <Home className="h-4 w-4 mr-2" />
+                Back to Dashboard
               </Button>
             </div>
-            
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              onChange={handleSpriteUpload}
-              className="hidden"
-            />
-          </div>
-          
-          <div className="flex-1 p-4 space-y-2 overflow-y-auto">
-            {sprites.map((sprite) => (
-              <Card
-                key={sprite.id}
-                className={`cursor-pointer transition-colors ${
-                  selectedSprite === sprite.id ? 'border-blue-500 bg-blue-50' : 'border-gray-200'
-                }`}
-                onClick={() => setSelectedSprite(sprite.id)}
+            <div className="flex items-center space-x-2">
+              <Button
+                onClick={executeBlocks}
+                disabled={isRunning || droppedBlocks.length === 0}
+                className="bg-green-600 hover:bg-green-700"
               >
-                <CardContent className="p-3">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 bg-gray-100 rounded flex items-center justify-center">
-                      {sprite.costume.startsWith('data:') ? (
-                        <img src={sprite.costume} alt={sprite.name} className="w-8 h-8 object-cover" />
-                      ) : (
-                        <span className="text-lg">{sprite.costume}</span>
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900 truncate">
-                        {sprite.name}
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        x: {Math.round(sprite.x)}, y: {Math.round(sprite.y)}
-                      </p>
-                    </div>
+                {isRunning ? (
+                  <>
+                    <Square className="h-4 w-4 mr-2" />
+                    Running...
+                  </>
+                ) : (
+                  <>
+                    <Play className="h-4 w-4 mr-2" />
+                    Run
+                  </>
+                )}
+              </Button>
+              <Button variant="outline" onClick={clearBlocks}>
+                <Trash2 className="h-4 w-4 mr-2" />
+                Clear
+              </Button>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex-1 flex">
+          {/* Block Palette */}
+          <div className="w-64 bg-white border-r flex flex-col">
+            <div className="p-4 border-b">
+              <h2 className="font-semibold text-gray-900 mb-3">Block Palette</h2>
+              <div className="space-y-1">
+                {Object.entries(BLOCK_CATEGORIES).map(([key, category]) => {
+                  const IconComponent = category.icon;
+                  return (
+                    <Button
+                      key={key}
+                      variant={selectedCategory === key ? "default" : "ghost"}
+                      size="sm"
+                      onClick={() => setSelectedCategory(key as keyof typeof BLOCK_CATEGORIES)}
+                      className="w-full justify-start"
+                    >
+                      <IconComponent className="h-4 w-4 mr-2" />
+                      {category.name}
+                    </Button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="flex-1 p-4 overflow-y-auto">
+              <div className="space-y-2">
+                {BLOCK_CATEGORIES[selectedCategory].blocks.map((block) => (
+                  <DraggableBlock
+                    key={block.id}
+                    block={block}
+                    isDraggable={true}
+                    isInScript={false}
+                    onUpdate={updateBlockParameter}
+                    onRemove={removeBlock}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Main Workspace */}
+          <div className="flex-1 flex flex-col">
+            {/* Stage */}
+            <div className="h-80 bg-white border-b p-4">
+              <Card className="h-full">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm">Stage</CardTitle>
+                </CardHeader>
+                <CardContent className="h-full p-2">
+                  <div
+                    ref={stageRef}
+                    className="relative w-full h-full bg-gray-100 border-2 border-dashed border-gray-300 rounded overflow-hidden"
+                  >
+                    {sprites.map((sprite) => (
+                      <div
+                        key={sprite.id}
+                        className={`absolute transition-all duration-500 ${sprite.visible ? 'opacity-100' : 'opacity-0'}`}
+                        style={{
+                          left: sprite.x,
+                          top: sprite.y,
+                          transform: `rotate(${sprite.rotation - 90}deg) scale(${sprite.size / 100})`,
+                          transformOrigin: 'center'
+                        }}
+                      >
+                        {sprite.costume.startsWith('data:') ? (
+                          <img src={sprite.costume} alt={sprite.name} className="w-8 h-8" />
+                        ) : (
+                          <span className="text-2xl">{sprite.costume}</span>
+                        )}
+                      </div>
+                    ))}
                   </div>
                 </CardContent>
               </Card>
-            ))}
+            </div>
+
+            {/* Scripts Area */}
+            <div className="flex-1 p-4">
+              <Card className="h-full">
+                <CardHeader className="pb-2">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-sm">Scripts</CardTitle>
+                    <Badge variant="outline" className="text-xs">
+                      {droppedBlocks.length} blocks
+                    </Badge>
+                  </div>
+                </CardHeader>
+                <CardContent className="h-full p-2">
+                  <div
+                    ref={scriptsAreaRef}
+                    className="relative w-full h-full bg-gray-50 border-2 border-dashed border-gray-300 rounded p-4 overflow-auto"
+                  >
+                    {droppedBlocks.length === 0 ? (
+                      <div className="absolute inset-0 flex items-center justify-center text-gray-400">
+                        <div className="text-center">
+                          <Box className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                          <p>Drag blocks here to create your program</p>
+                        </div>
+                      </div>
+                    ) : (
+                      droppedBlocks.map((block) => (
+                        <div
+                          key={block.uniqueId}
+                          className="absolute"
+                          style={{
+                            left: block.position.x,
+                            top: block.position.y,
+                          }}
+                        >
+                          <DraggableBlock
+                            block={block}
+                            isDraggable={false}
+                            isInScript={true}
+                            onUpdate={updateBlockParameter}
+                            onRemove={removeBlock}
+                          />
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+
+          {/* Sprite Panel */}
+          <div className="w-64 bg-white border-l flex flex-col">
+            <div className="p-4 border-b">
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="font-semibold text-gray-900">Sprites</h2>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
+
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleSpriteUpload}
+                className="hidden"
+              />
+            </div>
+            
+            <div className="flex-1 p-4 space-y-2 overflow-y-auto">
+              {sprites.map((sprite) => (
+                <Card
+                  key={sprite.id}
+                  className={`cursor-pointer transition-colors ${
+                    selectedSprite === sprite.id ? 'border-blue-500 bg-blue-50' : 'border-gray-200'
+                  }`}
+                  onClick={() => dispatch({ type: 'SELECT_SPRITE', payload: sprite.id })}
+                >
+                  <CardContent className="p-3">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-10 h-10 bg-gray-100 rounded flex items-center justify-center">
+                        {sprite.costume.startsWith('data:') ? (
+                          <img src={sprite.costume} alt={sprite.name} className="w-8 h-8 object-cover" />
+                        ) : (
+                          <span className="text-lg">{sprite.costume}</span>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-gray-900 truncate">
+                          {sprite.name}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          x: {Math.round(sprite.x)}, y: {Math.round(sprite.y)}
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </DndProvider>
   );
 };
 
