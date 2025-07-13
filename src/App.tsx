@@ -6,7 +6,6 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
-import Landing from "./pages/Landing";
 import AuthPage from "./pages/AuthPage";
 import PyNotebook from "./pages/PyNotebook";
 import PythonEditor from "./pages/PythonEditor";
@@ -24,10 +23,11 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <Routes>
-            <Route path="/landing" element={<Landing />} />
-            <Route path="/auth" element={<AuthPage />} />
+            <Route path="/" element={<Landing />} />
+            <Route path="/login" element={<AuthPage />} />
+            <Route path="/register" element={<AuthPage />} />
             <Route 
-              path="/" 
+              path="/dashboard"
               element={
                 <ProtectedRoute>
                   <Index />

@@ -153,6 +153,29 @@ const BLOCK_CATEGORIES = {
         color: '#9966FF',
         shape: 'stack' as const,
         parameters: []
+      },
+      {
+        id: 'change_size',
+        name: 'change size by [10]',
+        code: 'changeSize(10)',
+        color: '#9966FF',
+        shape: 'stack' as const,
+        parameters: [{ name: 'change', type: 'number' as const, value: 10 }]
+      },
+    ]
+  },
+  sound: {
+    name: 'Sound',
+    color: 'bg-pink-500',
+    icon: Volume2,
+    blocks: [
+      {
+        id: 'play_sound',
+        name: 'play sound [Meow]',
+        code: 'playSound("Meow")',
+        color: '#CF63CF',
+        shape: 'stack' as const,
+        parameters: [{ name: 'sound', type: 'dropdown' as const, value: 'Meow', options: ['Meow', 'Pop', 'Boing'] }]
       }
     ]
   },
@@ -194,6 +217,7 @@ type State = {
   selectedSprite: string;
   droppedBlocks: DroppedBlock[];
   isRunning: boolean;
+  stageBackground: string;
 };
 
 type Action =
@@ -204,7 +228,8 @@ type Action =
   | { type: 'REMOVE_BLOCK'; payload: string }
   | { type: 'UPDATE_BLOCK_PARAM'; payload: { uniqueId: string; paramIndex: number; value: any } }
   | { type: 'CLEAR_BLOCKS' }
-  | { type: 'SET_RUNNING'; payload: boolean };
+  | { type: 'SET_RUNNING'; payload: boolean }
+  | { type: 'SET_STAGE_BACKGROUND'; payload: string };
 
 const initialState: State = {
   sprites: [
@@ -223,6 +248,7 @@ const initialState: State = {
   selectedSprite: 'sprite1',
   droppedBlocks: [],
   isRunning: false,
+  stageBackground: 'white',
 };
 
 function reducer(state: State, action: Action): State {
@@ -264,6 +290,8 @@ function reducer(state: State, action: Action): State {
       return { ...state, droppedBlocks: [] };
     case 'SET_RUNNING':
       return { ...state, isRunning: action.payload };
+    case 'SET_STAGE_BACKGROUND':
+      return { ...state, stageBackground: action.payload };
     default:
       return state;
   }
@@ -324,13 +352,14 @@ const DraggableBlock = ({ block, isDraggable, isInScript, onUpdate, onRemove }) 
 const VisualCodingDragDrop = () => {
   const navigate = useNavigate();
   const [state, dispatch] = useReducer(reducer, initialState);
-  const { sprites, selectedSprite, droppedBlocks, isRunning } = state;
+  const { sprites, selectedSprite, droppedBlocks, isRunning, stageBackground } = state;
   const [selectedCategory, setSelectedCategory] = useState<keyof typeof BLOCK_CATEGORIES>('events');
   const [uploadedSprites, setUploadedSprites] = useState<string[]>([]);
 
   const scriptsAreaRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const backgroundInputRef = useRef<HTMLInputElement>(null);
 
   const [, drop] = useDrop(() => ({
     accept: ItemTypes.BLOCK,
@@ -388,6 +417,18 @@ const VisualCodingDragDrop = () => {
         };
         
         dispatch({ type: 'ADD_SPRITE', payload: newSprite });
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleBackgroundUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && file.type.startsWith('image/')) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const imageUrl = event.target?.result as string;
+        dispatch({ type: 'SET_STAGE_BACKGROUND', payload: imageUrl });
       };
       reader.readAsDataURL(file);
     }
@@ -464,6 +505,15 @@ const VisualCodingDragDrop = () => {
         break;
       case 'hide':
         newSpriteState.visible = false;
+        break;
+      case 'change_size':
+        const change = block.parameters?.[0]?.value || 10;
+        newSpriteState.size = Math.max(10, sprite.size + change);
+        break;
+      case 'play_sound':
+        const sound = block.parameters?.[0]?.value || 'Meow';
+        const audio = new Audio(`/sounds/${sound.toLowerCase()}.mp3`);
+        audio.play();
         break;
     }
 
@@ -563,11 +613,27 @@ const VisualCodingDragDrop = () => {
               <Card className="h-full">
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm">Stage</CardTitle>
+                  <Button size="sm" variant="outline" onClick={() => backgroundInputRef.current?.click()}>
+                    <ImageIcon className="h-4 w-4 mr-2" />
+                    Set Background
+                  </Button>
+                  <input
+                    ref={backgroundInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleBackgroundUpload}
+                    className="hidden"
+                  />
                 </CardHeader>
                 <CardContent className="h-full p-2">
                   <div
                     ref={stageRef}
                     className="relative w-full h-full bg-gray-100 border-2 border-dashed border-gray-300 rounded overflow-hidden"
+                    style={{
+                      background: stageBackground.startsWith('data:') ? `url(${stageBackground})` : stageBackground,
+                      backgroundSize: 'cover',
+                      backgroundPosition: 'center',
+                    }}
                   >
                     {sprites.map((sprite) => (
                       <div
