@@ -41,7 +41,7 @@ export interface ScratchBlock {
   description?: string;
 }
 
-export const SCRATCH_BLOCKS: Record<string, { name: string; color: string; icon: React.ComponentType; blocks: ScratchBlock[] }> = {
+export const SCRATCH_BLOCKS: Record<string, { name: string; color: string; icon: React.ComponentType<any>; blocks: ScratchBlock[] }> = {
   events: {
     name: 'Events',
     color: 'bg-amber-500',
@@ -867,9 +867,10 @@ export const SCRATCH_BLOCKS: Record<string, { name: string; color: string; icon:
 interface ScratchBlocksProps {
   onBlockSelect: (block: ScratchBlock) => void;
   searchTerm: string;
+  onBlockDragStart?: (e: React.DragEvent, block: ScratchBlock) => void;
 }
 
-const ScratchBlocks: React.FC<ScratchBlocksProps> = ({ onBlockSelect, searchTerm }) => {
+const ScratchBlocks: React.FC<ScratchBlocksProps> = ({ onBlockSelect, searchTerm, onBlockDragStart }) => {
   const filteredCategories = Object.entries(SCRATCH_BLOCKS).map(([key, category]) => ({
     key,
     ...category,
@@ -914,12 +915,14 @@ const ScratchBlocks: React.FC<ScratchBlocksProps> = ({ onBlockSelect, searchTerm
               <Button
                 key={block.id}
                 variant="outline"
-                className={`w-full justify-start text-left p-2 h-auto ${getBlockShape(block.shape)} hover:shadow-md transition-all`}
+                className={`w-full justify-start text-left p-2 h-auto ${getBlockShape(block.shape)} hover:shadow-md transition-all cursor-grab active:cursor-grabbing`}
                 style={{ 
                   backgroundColor: block.color,
                   borderColor: block.color,
                   color: 'white'
                 }}
+                draggable
+                onDragStart={(e) => onBlockDragStart?.(e, block)}
                 onClick={() => onBlockSelect(block)}
               >
                 <div className="w-full">
