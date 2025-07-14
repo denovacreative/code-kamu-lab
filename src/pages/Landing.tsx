@@ -1,284 +1,233 @@
-import { useState } from 'react';
+import React, { Suspense } from 'react';
+import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import ThreeScene from '@/components/ThreeScene';
 import { 
-  BookOpen, 
-  Users, 
   Code, 
-  GraduationCap,
-  ChevronRight,
-  Play,
+  Users, 
+  BookOpen, 
+  Zap, 
+  Play, 
+  Star,
+  ArrowRight,
   Monitor,
-  Share2,
-  CheckCircle
+  Gamepad2,
+  Brain,
+  Target,
+  CheckCircle,
+  Sparkles
 } from 'lucide-react';
 
 const Landing = () => {
-  const [userType, setUserType] = useState<'student' | 'teacher' | null>(null);
-
-  const features = [
-    {
-      icon: Code,
-      title: "Interactive Python Notebook",
-      description: "Code, compile, and run Python online with real-time execution",
-      color: "bg-blue-500"
-    },
-    {
-      icon: Share2,
-      title: "Assignment Sharing",
-      description: "Teachers can share notebooks for students to complete and submit",
-      color: "bg-green-500"
-    },
-    {
-      icon: Monitor,
-      title: "Live Terminal",
-      description: "Full Python environment with terminal access and package support",
-      color: "bg-purple-500"
-    },
-    {
-      icon: CheckCircle,
-      title: "Auto Grading",
-      description: "Automatic feedback and grading system for submitted assignments",
-      color: "bg-orange-500"
-    }
-  ];
-
-  const handleGetStarted = () => {
-    if (userType) {
-      // Navigate to auth with role parameter
-      window.location.href = `/auth?role=${userType}`;
-    } else {
-      // If no role selected, go to auth page
-      window.location.href = '/auth';
-    }
-  };
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[hsl(var(--pictoblox-purple))] to-[hsl(var(--pictoblox-purple-dark))]">
-      {/* Hero Section */}
-      <div className="relative overflow-hidden">
-        <div className="max-w-6xl mx-auto px-6 py-20">
-          <div className="text-center mb-16">
-            <h1 className="text-5xl md:text-6xl font-bold text-white mb-6">
-              Python Learning
-              <span className="block text-[hsl(var(--pictoblox-orange))]">Made Simple</span>
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white overflow-hidden">
+      {/* Hero Section with Three.js Background */}
+      <section className="relative h-screen flex items-center justify-center">
+        {/* Three.js Background */}
+        <div className="absolute inset-0 z-0">
+          <Suspense fallback={
+            <div className="w-full h-full bg-gradient-to-br from-blue-900/20 to-purple-900/20 flex items-center justify-center">
+              <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-white"></div>
+            </div>
+          }>
+            <ThreeScene />
+          </Suspense>
+        </div>
+        
+        {/* Overlay Content */}
+        <div className="relative z-10 text-center px-4 max-w-4xl mx-auto">
+          <div className="backdrop-blur-sm bg-black/20 rounded-2xl p-8 border border-white/10">
+            <Badge className="mb-4 bg-gradient-to-r from-blue-500 to-purple-500 text-white border-0">
+              🚀 Interactive Learning Platform
+            </Badge>
+            
+            <h1 className="text-6xl font-bold mb-6 bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
+              EduCode Platform
             </h1>
-            <p className="text-xl text-white/80 mb-8 max-w-3xl mx-auto">
-              Interactive Python notebook environment for teachers and students. 
-              Create, share, and learn Python programming with real-time compilation and feedback.
+            
+            <p className="text-xl text-gray-300 mb-8 leading-relaxed">
+              Master programming through interactive lessons, visual coding, and collaborative learning. 
+              Join thousands of students and teachers in our innovative coding education platform.
             </p>
             
-            {/* User Type Selection */}
-            <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
-              <Button
-                size="lg"
-                variant={userType === 'student' ? 'default' : 'outline'}
-                onClick={() => setUserType('student')}
-                className={`px-8 py-6 text-lg ${
-                  userType === 'student' 
-                    ? 'bg-[hsl(var(--pictoblox-orange))] hover:bg-[hsl(var(--pictoblox-orange))/80]' 
-                    : 'bg-white/10 border-white/20 text-white hover:bg-white/20'
-                }`}
-              >
-                <Users className="h-5 w-5 mr-2" />
-                I'm a Student
-              </Button>
-              <Button
-                size="lg"
-                variant={userType === 'teacher' ? 'default' : 'outline'}
-                onClick={() => setUserType('teacher')}
-                className={`px-8 py-6 text-lg ${
-                  userType === 'teacher' 
-                    ? 'bg-[hsl(var(--pictoblox-orange))] hover:bg-[hsl(var(--pictoblox-orange))/80]' 
-                    : 'bg-white/10 border-white/20 text-white hover:bg-white/20'
-                }`}
-              >
-                <GraduationCap className="h-5 w-5 mr-2" />
-                I'm a Teacher
-              </Button>
-            </div>
-
-            {userType && (
-              <Button
-                size="lg"
-                onClick={handleGetStarted}
-                className="px-8 py-6 text-lg bg-white text-[hsl(var(--pictoblox-purple))] hover:bg-white/90 font-semibold"
-              >
-                Get Started as {userType === 'student' ? 'Student' : 'Teacher'}
-                <ChevronRight className="h-5 w-5 ml-2" />
-              </Button>
-            )}
-          </div>
-
-          {/* Demo Preview */}
-          <div className="bg-white/10 backdrop-blur-sm rounded-3xl p-8 border border-white/20">
-            <div className="bg-gray-900 rounded-lg p-6 font-mono text-sm">
-              <div className="flex items-center mb-4">
-                <div className="flex space-x-2">
-                  <div className="w-3 h-3 rounded-full bg-red-500"></div>
-                  <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
-                  <div className="w-3 h-3 rounded-full bg-green-500"></div>
-                </div>
-                <span className="ml-4 text-gray-400">Python Notebook</span>
-              </div>
-              <div className="text-green-400">
-                <span className="text-blue-400"># Welcome to Python Learning Platform</span><br/>
-                <span className="text-yellow-400">print</span>(<span className="text-red-400">"Hello, Python!"</span>)<br/>
-                <span className="text-gray-500">Hello, Python!</span><br/><br/>
-                <span className="text-blue-400"># Let's learn together!</span><br/>
-                <span className="text-yellow-400">for</span> i <span className="text-yellow-400">in</span> <span className="text-yellow-400">range</span>(<span className="text-red-400">3</span>):<br/>
-                &nbsp;&nbsp;&nbsp;&nbsp;<span className="text-yellow-400">print</span>(<span className="text-red-400">"Step " + str(i+1)</span>)
-              </div>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Link to="/auth">
+                <Button size="lg" className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white border-0 px-8 py-3 text-lg group">
+                  Start Learning
+                  <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
+                </Button>
+              </Link>
+              
+              <Link to="/visual-coding">
+                <Button size="lg" variant="outline" className="border-white/30 text-white hover:bg-white/10 px-8 py-3 text-lg">
+                  <Play className="mr-2 h-5 w-5" />
+                  Try Visual Coding
+                </Button>
+              </Link>
             </div>
           </div>
         </div>
-      </div>
+
+        {/* Floating Elements */}
+        <div className="absolute top-20 left-10 animate-bounce">
+          <div className="bg-blue-500/20 backdrop-blur-sm rounded-lg p-3 border border-blue-400/30">
+            <Code className="h-6 w-6 text-blue-400" />
+          </div>
+        </div>
+        
+        <div className="absolute top-32 right-20 animate-pulse">
+          <div className="bg-purple-500/20 backdrop-blur-sm rounded-lg p-3 border border-purple-400/30">
+            <Zap className="h-6 w-6 text-purple-400" />
+          </div>
+        </div>
+        
+        <div className="absolute bottom-32 left-20 animate-bounce delay-200">
+          <div className="bg-pink-500/20 backdrop-blur-sm rounded-lg p-3 border border-pink-400/30">
+            <Brain className="h-6 w-6 text-pink-400" />
+          </div>
+        </div>
+      </section>
 
       {/* Features Section */}
-      <div className="bg-white/95 backdrop-blur-sm py-20">
-        <div className="max-w-6xl mx-auto px-6">
+      <section className="py-20 px-4 relative z-10 bg-gradient-to-b from-transparent to-slate-900/50">
+        <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-800 mb-4">
-              Powerful Features for Modern Learning
+            <h2 className="text-4xl font-bold mb-4 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+              Why Choose EduCode?
             </h2>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Everything you need to teach and learn Python programming effectively
+            <p className="text-xl text-gray-300 max-w-2xl mx-auto">
+              Our platform combines the best of modern education technology with proven teaching methods
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {features.map((feature, index) => (
-              <Card key={index} className="border-2 border-gray-200 hover:border-gray-300 transition-all duration-300 hover:shadow-lg">
-                <CardHeader>
-                  <div className="flex items-center space-x-4 mb-4">
-                    <div className={`p-3 rounded-xl ${feature.color} text-white`}>
-                      <feature.icon className="w-6 h-6" />
-                    </div>
-                    <CardTitle className="text-xl text-gray-800">{feature.title}</CardTitle>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-gray-600">{feature.description}</p>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* How It Works Section */}
-      <div className="bg-gradient-to-br from-[hsl(var(--pictoblox-purple))] to-[hsl(var(--pictoblox-purple-dark))] py-20">
-        <div className="max-w-6xl mx-auto px-6">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-white mb-4">
-              How It Works
-            </h2>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-            {/* For Teachers */}
-            <Card className="bg-white/10 backdrop-blur-sm border-white/20 text-white">
+          <div className="grid md:grid-cols-3 gap-8">
+            <Card className="bg-white/5 backdrop-blur-sm border-white/10 hover:bg-white/10 transition-all duration-300 group">
               <CardHeader>
-                <CardTitle className="text-2xl flex items-center">
-                  <GraduationCap className="h-6 w-6 mr-2" />
-                  For Teachers
-                </CardTitle>
+                <div className="bg-gradient-to-br from-blue-500 to-blue-600 w-12 h-12 rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                  <Monitor className="h-6 w-6 text-white" />
+                </div>
+                <CardTitle className="text-white">Interactive Coding Environment</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-start space-x-3">
-                  <Badge className="bg-[hsl(var(--pictoblox-orange))] text-white">1</Badge>
-                  <p>Create interactive Python notebooks with exercises</p>
-                </div>
-                <div className="flex items-start space-x-3">
-                  <Badge className="bg-[hsl(var(--pictoblox-orange))] text-white">2</Badge>
-                  <p>Share assignments with students instantly</p>
-                </div>
-                <div className="flex items-start space-x-3">
-                  <Badge className="bg-[hsl(var(--pictoblox-orange))] text-white">3</Badge>
-                  <p>Monitor progress and provide real-time feedback</p>
-                </div>
-                <div className="flex items-start space-x-3">
-                  <Badge className="bg-[hsl(var(--pictoblox-orange))] text-white">4</Badge>
-                  <p>Auto-grade submissions and track student performance</p>
+              <CardContent>
+                <p className="text-gray-300">
+                  Write, run, and debug code directly in your browser with our advanced Python notebook environment.
+                </p>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <Badge variant="outline" className="border-blue-400/30 text-blue-400">Python</Badge>
+                  <Badge variant="outline" className="border-blue-400/30 text-blue-400">Real-time</Badge>
+                  <Badge variant="outline" className="border-blue-400/30 text-blue-400">Collaborative</Badge>
                 </div>
               </CardContent>
             </Card>
 
-            {/* For Students */}
-            <Card className="bg-white/10 backdrop-blur-sm border-white/20 text-white">
+            <Card className="bg-white/5 backdrop-blur-sm border-white/10 hover:bg-white/10 transition-all duration-300 group">
               <CardHeader>
-                <CardTitle className="text-2xl flex items-center">
-                  <Users className="h-6 w-6 mr-2" />
-                  For Students
-                </CardTitle>
+                <div className="bg-gradient-to-br from-purple-500 to-purple-600 w-12 h-12 rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                  <Gamepad2 className="h-6 w-6 text-white" />
+                </div>
+                <CardTitle className="text-white">Visual Block Coding</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-start space-x-3">
-                  <Badge className="bg-[hsl(var(--pictoblox-blue))] text-white">1</Badge>
-                  <p>Access assignments from your teachers</p>
+              <CardContent>
+                <p className="text-gray-300">
+                  Learn programming concepts through drag-and-drop blocks, perfect for beginners and visual learners.
+                </p>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <Badge variant="outline" className="border-purple-400/30 text-purple-400">Scratch-like</Badge>
+                  <Badge variant="outline" className="border-purple-400/30 text-purple-400">Beginner-friendly</Badge>
+                  <Badge variant="outline" className="border-purple-400/30 text-purple-400">Interactive</Badge>
                 </div>
-                <div className="flex items-start space-x-3">
-                  <Badge className="bg-[hsl(var(--pictoblox-blue))] text-white">2</Badge>
-                  <p>Code in Python with instant compilation</p>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-white/5 backdrop-blur-sm border-white/10 hover:bg-white/10 transition-all duration-300 group">
+              <CardHeader>
+                <div className="bg-gradient-to-br from-pink-500 to-pink-600 w-12 h-12 rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                  <Users className="h-6 w-6 text-white" />
                 </div>
-                <div className="flex items-start space-x-3">
-                  <Badge className="bg-[hsl(var(--pictoblox-blue))] text-white">3</Badge>
-                  <p>Get immediate feedback on your code</p>
-                </div>
-                <div className="flex items-start space-x-3">
-                  <Badge className="bg-[hsl(var(--pictoblox-blue))] text-white">4</Badge>
-                  <p>Submit completed work and track your progress</p>
+                <CardTitle className="text-white">Classroom Management</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-300">
+                  Teachers can create classes, assign projects, track progress, and provide real-time feedback to students.
+                </p>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <Badge variant="outline" className="border-pink-400/30 text-pink-400">Live Monitoring</Badge>
+                  <Badge variant="outline" className="border-pink-400/30 text-pink-400">Assignments</Badge>
+                  <Badge variant="outline" className="border-pink-400/30 text-pink-400">Analytics</Badge>
                 </div>
               </CardContent>
             </Card>
           </div>
         </div>
-      </div>
+      </section>
+
+      {/* Stats Section */}
+      <section className="py-20 px-4 bg-gradient-to-r from-blue-900/20 to-purple-900/20 backdrop-blur-sm">
+        <div className="max-w-4xl mx-auto text-center">
+          <h2 className="text-3xl font-bold mb-12 text-white">Trusted by Educators Worldwide</h2>
+          
+          <div className="grid md:grid-cols-4 gap-8">
+            <div className="text-center">
+              <div className="text-4xl font-bold text-blue-400 mb-2">10K+</div>
+              <div className="text-gray-300">Active Students</div>
+            </div>
+            <div className="text-center">
+              <div className="text-4xl font-bold text-purple-400 mb-2">500+</div>
+              <div className="text-gray-300">Teachers</div>
+            </div>
+            <div className="text-center">
+              <div className="text-4xl font-bold text-pink-400 mb-2">1M+</div>
+              <div className="text-gray-300">Code Executions</div>
+            </div>
+            <div className="text-center">
+              <div className="text-4xl font-bold text-green-400 mb-2">50+</div>
+              <div className="text-gray-300">Countries</div>
+            </div>
+          </div>
+        </div>
+      </section>
 
       {/* CTA Section */}
-      <div className="bg-white/95 backdrop-blur-sm py-20">
-        <div className="max-w-4xl mx-auto text-center px-6">
-          <h2 className="text-4xl font-bold text-gray-800 mb-6">
-            Ready to Start Learning Python?
+      <section className="py-20 px-4 text-center">
+        <div className="max-w-3xl mx-auto">
+          <h2 className="text-4xl font-bold mb-6 bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
+            Ready to Start Your Coding Journey?
           </h2>
-          <p className="text-xl text-gray-600 mb-8">
-            Join thousands of students and teachers already using our platform
+          <p className="text-xl text-gray-300 mb-8">
+            Join thousands of students and teachers who are already learning and teaching with EduCode Platform.
           </p>
           
-          {!userType && (
-            <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
-              <Button
-                size="lg"
-                onClick={() => setUserType('student')}
-                className="px-8 py-6 text-lg bg-[hsl(var(--pictoblox-blue))] hover:bg-[hsl(var(--pictoblox-blue))/80]"
-              >
-                <Users className="h-5 w-5 mr-2" />
-                Sign Up as Student
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Link to="/auth">
+              <Button size="lg" className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white border-0 px-8 py-3 text-lg group">
+                <Sparkles className="mr-2 h-5 w-5" />
+                Get Started Free
+                <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
               </Button>
-              <Button
-                size="lg"
-                onClick={() => setUserType('teacher')}
-                className="px-8 py-6 text-lg bg-[hsl(var(--pictoblox-orange))] hover:bg-[hsl(var(--pictoblox-orange))/80]"
-              >
-                <GraduationCap className="h-5 w-5 mr-2" />
-                Sign Up as Teacher
-              </Button>
-            </div>
-          )}
-          
-          {userType && (
-            <Button
-              size="lg"
-              onClick={handleGetStarted}
-              className="px-8 py-6 text-lg bg-[hsl(var(--pictoblox-purple))] hover:bg-[hsl(var(--pictoblox-purple-dark))] text-white"
-            >
-              Get Started Now
-              <ChevronRight className="h-5 w-5 ml-2" />
-            </Button>
-          )}
+            </Link>
+          </div>
         </div>
-      </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="py-12 px-4 bg-slate-900/50 backdrop-blur-sm border-t border-white/10">
+        <div className="max-w-6xl mx-auto text-center">
+          <div className="text-2xl font-bold mb-4 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+            EduCode Platform
+          </div>
+          <p className="text-gray-400 mb-6">
+            Empowering the next generation of programmers through interactive education.
+          </p>
+          <div className="flex justify-center space-x-6 text-sm text-gray-400">
+            <a href="#" className="hover:text-white transition-colors">Privacy Policy</a>
+            <a href="#" className="hover:text-white transition-colors">Terms of Service</a>
+            <a href="#" className="hover:text-white transition-colors">Contact</a>
+            <a href="#" className="hover:text-white transition-colors">About</a>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 };

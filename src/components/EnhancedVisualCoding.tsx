@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import ScratchBlocks, { ScratchBlock } from './ScratchBlocks';
 import { useToast } from '@/hooks/use-toast';
+import { useNavigate } from 'react-router-dom';
 import { 
   Play, 
   Square, 
@@ -31,7 +32,9 @@ import {
   Code,
   FileText,
   Star,
-  Sparkles
+  Sparkles,
+  ArrowLeft,
+  Home
 } from 'lucide-react';
 
 interface DroppedBlock extends ScratchBlock {
@@ -66,6 +69,7 @@ interface Backdrop {
 }
 
 const EnhancedVisualCoding = () => {
+  const navigate = useNavigate();
   const { toast } = useToast();
   const [scripts, setScripts] = useState<DroppedBlock[]>([]);
   const [sprites, setSprites] = useState<Sprite[]>([
@@ -99,10 +103,11 @@ const EnhancedVisualCoding = () => {
   const [draggedBlock, setDraggedBlock] = useState<ScratchBlock | null>(null);
   const scriptAreaRef = useRef<HTMLDivElement>(null);
 
-  // Create drag and drop functionality
+  // Create proper drag and drop functionality
   const handleBlockDragStart = (e: React.DragEvent, block: ScratchBlock) => {
-    setDraggedBlock(block);
+    e.dataTransfer.setData('application/json', JSON.stringify(block));
     e.dataTransfer.effectAllowed = 'copy';
+    setDraggedBlock(block);
   };
 
   const handleScriptAreaDragOver = (e: React.DragEvent) => {
@@ -112,29 +117,36 @@ const EnhancedVisualCoding = () => {
 
   const handleScriptAreaDrop = (e: React.DragEvent) => {
     e.preventDefault();
-    if (!draggedBlock || !currentSprite) return;
-
-    const rect = scriptAreaRef.current?.getBoundingClientRect();
-    if (!rect) return;
-
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-
-    const droppedBlock: DroppedBlock = {
-      ...draggedBlock,
-      scriptId: currentSprite.id,
-      position: { x, y },
-      uniqueId: `${draggedBlock.id}-${Date.now()}`,
-      parameterValues: {}
-    };
-
-    setScripts(prev => [...prev, droppedBlock]);
-    setDraggedBlock(null);
     
-    toast({
-      title: "Block added!",
-      description: `${draggedBlock.name} has been added to the script.`,
-    });
+    const blockData = e.dataTransfer.getData('application/json');
+    if (!blockData || !currentSprite) return;
+
+    try {
+      const block: ScratchBlock = JSON.parse(blockData);
+      const rect = scriptAreaRef.current?.getBoundingClientRect();
+      if (!rect) return;
+
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+
+      const droppedBlock: DroppedBlock = {
+        ...block,
+        scriptId: currentSprite.id,
+        position: { x, y },
+        uniqueId: `${block.id}-${Date.now()}`,
+        parameterValues: {}
+      };
+
+      setScripts(prev => [...prev, droppedBlock]);
+      setDraggedBlock(null);
+      
+      toast({
+        title: "Block added!",
+        description: `${block.name} has been added to the script.`,
+      });
+    } catch (error) {
+      console.error('Failed to parse dropped block data:', error);
+    }
   };
 
   // Execute script functionality
@@ -363,9 +375,29 @@ const EnhancedVisualCoding = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 p-4">
       <div className="max-w-7xl mx-auto">
-        {/* Header */}
+        {/* Header with Back Button */}
         <div className="mb-6">
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-2">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <Button 
+                variant="outline" 
+                onClick={() => navigate('/dashboard')}
+                className="flex items-center space-x-2"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                <span>Back to Dashboard</span>
+              </Button>
+              <Button 
+                variant="outline" 
+                onClick={() => navigate('/')}
+                className="flex items-center space-x-2"
+              >
+                <Home className="h-4 w-4" />
+                <span>Home</span>
+              </Button>
+            </div>
+          </div>
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-2 mt-4">
             Enhanced Visual Coding Studio
           </h1>
           <p className="text-gray-600">Create amazing projects with drag-and-drop programming blocks!</p>
