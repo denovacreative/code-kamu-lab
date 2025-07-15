@@ -78,20 +78,30 @@ const TeacherMonitoringDashboard = ({ classId, className, onBack }: TeacherMonit
           student_id,
           joined_at,
           last_activity,
-          is_active,
-          profiles!class_members_student_id_fkey (
-            display_name,
-            user_id
-          )
+          is_active
         `)
         .eq('class_id', classId)
         .eq('is_active', true);
 
       if (error) throw error;
 
+      // Get profiles separately to avoid foreign key issues
+      const studentIds = (data || []).map(m => m.student_id);
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('user_id, display_name')
+        .in('user_id', studentIds);
+
+      if (profilesError) throw profilesError;
+
+      // Create profiles map for easier lookup
+      const profilesMap = new Map(profiles?.map(p => [p.user_id, p]) || []);
+
       // Get session data for each student
       const studentsWithSessions = await Promise.all(
         (data || []).map(async (member) => {
+          const profile = profilesMap.get(member.student_id);
+          
           const { data: sessionData } = await supabase
             .from('class_sessions')
             .select('*')
@@ -109,10 +119,10 @@ const TeacherMonitoringDashboard = ({ classId, className, onBack }: TeacherMonit
           return {
             id: member.id,
             student_id: member.student_id,
-            display_name: (member.profiles as any)?.display_name || 'Student',
-            email: member.student_id, // This should be fetched properly
+            display_name: profile?.display_name || 'Student',
+            email: profile?.user_id || 'No email',
             joined_at: member.joined_at,
-            last_activity: member.last_activity,
+            last_activity: member.last_activity || new Date().toISOString(),
             is_active: member.is_active,
             is_online: sessionData?.is_online || false,
             active_cell: sessionData?.active_cell,
@@ -138,26 +148,35 @@ const TeacherMonitoringDashboard = ({ classId, className, onBack }: TeacherMonit
     try {
       const { data, error } = await supabase
         .from('class_activities')
-        .select(`
-          *,
-          profiles!class_activities_user_id_fkey (
-            display_name
-          )
-        `)
+        .select('*')
         .eq('class_id', classId)
         .order('timestamp', { ascending: false })
         .limit(100);
 
       if (error) throw error;
 
+      // Get user names separately
+      const userIds = [...new Set((data || []).map(a => a.user_id))];
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('user_id, display_name')
+        .in('user_id', userIds);
+
+      const profilesMap = new Map(profiles?.map(p => [p.user_id, p]) || []);
+
       const activitiesWithNames = (data || []).map(activity => ({
         ...activity,
-        user_name: (activity.profiles as any)?.display_name || 'Unknown User'
+        user_name: profilesMap.get(activity.user_id)?.display_name || 'Unknown User'
       }));
 
       setActivities(activitiesWithNames);
     } catch (error) {
       console.error('Error loading activities:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load activities",
+        variant: "destructive"
+      });
     }
   };
 
@@ -265,7 +284,7 @@ const TeacherMonitoringDashboard = ({ classId, className, onBack }: TeacherMonit
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[hsl(var(--pictoblox-purple))] to-[hsl(var(--pictoblox-purple-dark))]">
+    <div className="min-h-screen bg-gradient-to-br from-[hsl(var(--primary))] via-[hsl(var(--primary-variant))] to-[hsl(var(--secondary))]">
       {/* Header */}
       <div className="bg-white/10 backdrop-blur-sm border-b border-white/20 p-4">
         <div className="max-w-7xl mx-auto flex justify-between items-center">
@@ -491,51 +510,59 @@ const TeacherMonitoringDashboard = ({ classId, className, onBack }: TeacherMonit
 
           <TabsContent value="analytics">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-              <Card className="bg-white/95 backdrop-blur-sm">
+              <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200 hover:shadow-lg transition-shadow">
                 <CardContent className="p-4">
-                  <div className="flex items-center space-x-2">
-                    <Users className="h-8 w-8 text-blue-600" />
+                  <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-2xl font-bold">{students.length}</p>
-                      <p className="text-sm text-gray-600">Total Students</p>
+                      <p className="text-2xl font-bold text-blue-700">{students.length}</p>
+                      <p className="text-sm font-medium text-blue-600">Total Students</p>
+                    </div>
+                    <div className="h-12 w-12 bg-blue-500 rounded-full flex items-center justify-center">
+                      <Users className="h-6 w-6 text-white" />
                     </div>
                   </div>
                 </CardContent>
               </Card>
 
-              <Card className="bg-white/95 backdrop-blur-sm">
+              <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200 hover:shadow-lg transition-shadow">
                 <CardContent className="p-4">
-                  <div className="flex items-center space-x-2">
-                    <UserCheck className="h-8 w-8 text-green-600" />
+                  <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-2xl font-bold">{students.filter(s => s.is_online).length}</p>
-                      <p className="text-sm text-gray-600">Online Now</p>
+                      <p className="text-2xl font-bold text-green-700">{students.filter(s => s.is_online).length}</p>
+                      <p className="text-sm font-medium text-green-600">Online Now</p>
+                    </div>
+                    <div className="h-12 w-12 bg-green-500 rounded-full flex items-center justify-center">
+                      <UserCheck className="h-6 w-6 text-white" />
                     </div>
                   </div>
                 </CardContent>
               </Card>
 
-              <Card className="bg-white/95 backdrop-blur-sm">
+              <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200 hover:shadow-lg transition-shadow">
                 <CardContent className="p-4">
-                  <div className="flex items-center space-x-2">
-                    <Play className="h-8 w-8 text-purple-600" />
+                  <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-2xl font-bold">
+                      <p className="text-2xl font-bold text-purple-700">
                         {students.reduce((sum, s) => sum + s.total_executions, 0)}
                       </p>
-                      <p className="text-sm text-gray-600">Total Executions</p>
+                      <p className="text-sm font-medium text-purple-600">Total Executions</p>
+                    </div>
+                    <div className="h-12 w-12 bg-purple-500 rounded-full flex items-center justify-center">
+                      <Play className="h-6 w-6 text-white" />
                     </div>
                   </div>
                 </CardContent>
               </Card>
 
-              <Card className="bg-white/95 backdrop-blur-sm">
+              <Card className="bg-gradient-to-br from-orange-50 to-orange-100 border-orange-200 hover:shadow-lg transition-shadow">
                 <CardContent className="p-4">
-                  <div className="flex items-center space-x-2">
-                    <Activity className="h-8 w-8 text-orange-600" />
+                  <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-2xl font-bold">{activities.length}</p>
-                      <p className="text-sm text-gray-600">Total Activities</p>
+                      <p className="text-2xl font-bold text-orange-700">{activities.length}</p>
+                      <p className="text-sm font-medium text-orange-600">Total Activities</p>
+                    </div>
+                    <div className="h-12 w-12 bg-orange-500 rounded-full flex items-center justify-center">
+                      <Activity className="h-6 w-6 text-white" />
                     </div>
                   </div>
                 </CardContent>

@@ -335,9 +335,9 @@ const ClassroomDashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[hsl(var(--pictoblox-purple))] to-[hsl(var(--pictoblox-purple-dark))]">
+    <div className="min-h-screen bg-gradient-to-br from-[hsl(var(--primary))] via-[hsl(var(--primary-variant))] to-[hsl(var(--secondary))]">
       {/* Navigation Header */}
-      <div className="bg-white/10 backdrop-blur-sm border-b border-white/20 p-4">
+      <div className="bg-white/10 backdrop-blur-sm border-b border-white/20 p-4 shadow-lg">
         <div className="max-w-7xl mx-auto flex justify-between items-center">
           <div className="flex items-center space-x-6">
             {selectedClass ? (
@@ -362,33 +362,35 @@ const ClassroomDashboard = () => {
             </Button>
             )}
             
-            <h1 className="text-xl font-bold text-white flex items-center">
-              {selectedClass ? (
-                <>
-                  <BookOpen className="h-5 w-5 mr-2" />
-                  {selectedClass.name}
-                </>
-              ) : (
-                <>
-                  {userRole === 'teacher' ? (
-                    <GraduationCap className="h-5 w-5 mr-2" />
-                  ) : (
-                    <Users className="h-5 w-5 mr-2" />
-                  )}
-                  {userRole === 'teacher' ? 'Teacher' : 'Student'} Classroom
-                </>
-              )}
-            </h1>
+            <div className="flex items-center space-x-3">
+              <div className="h-10 w-10 bg-white/20 rounded-full flex items-center justify-center">
+                {selectedClass ? (
+                  <BookOpen className="h-5 w-5 text-white" />
+                ) : userRole === 'teacher' ? (
+                  <GraduationCap className="h-5 w-5 text-white" />
+                ) : (
+                  <Users className="h-5 w-5 text-white" />
+                )}
+              </div>
+              <div>
+                <h1 className="text-xl font-bold text-white">
+                  {selectedClass ? selectedClass.name : `${userRole === 'teacher' ? 'Teacher' : 'Student'} Classroom`}
+                </h1>
+                <p className="text-white/70 text-sm">
+                  {selectedClass ? 'Collaborative Learning Space' : 'Welcome to your learning dashboard'}
+                </p>
+              </div>
+            </div>
           </div>
           
           <div className="flex items-center space-x-4">
             {/* Class-specific navigation */}
             {selectedClass && (
-              <>
+              <div className="flex items-center space-x-2">
                 <Button
                   variant="ghost"
                   size="sm"
-                  className={getNavButtonClassName('notebook')}
+                  className={`${getNavButtonClassName('notebook')} rounded-full px-4 py-2 transition-all duration-200 hover:scale-105`}
                   onClick={() => setCurrentView('notebook')}
                 >
                   <BookOpen className="h-4 w-4 mr-2" />
@@ -398,13 +400,15 @@ const ClassroomDashboard = () => {
                 <Button
                   variant="ghost"
                   size="sm"
-                  className={getNavButtonClassName('chat')}
+                  className={`${getNavButtonClassName('chat')} rounded-full px-4 py-2 transition-all duration-200 hover:scale-105`}
                   onClick={() => setCurrentView('chat')}
                 >
                   <div className="relative">
                     <MessageCircle className="h-4 w-4 mr-2" />
                     {hasUnreadMessages && (
-                      <div className="absolute -top-1 -right-1 h-2 w-2 bg-red-500 rounded-full animate-pulse" />
+                      <div className="absolute -top-1 -right-1 h-3 w-3 bg-red-500 rounded-full animate-pulse flex items-center justify-center">
+                        <div className="h-1.5 w-1.5 bg-white rounded-full"></div>
+                      </div>
                     )}
                   </div>
                   Chat
@@ -413,7 +417,7 @@ const ClassroomDashboard = () => {
                 <Button
                   variant="ghost"
                   size="sm"
-                  className={getNavButtonClassName('assignments')}
+                  className={`${getNavButtonClassName('assignments')} rounded-full px-4 py-2 transition-all duration-200 hover:scale-105`}
                   onClick={() => setCurrentView('assignments')}
                 >
                   <ClipboardList className="h-4 w-4 mr-2" />
@@ -423,7 +427,7 @@ const ClassroomDashboard = () => {
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="text-white hover:bg-white/20"
+                  className="text-white hover:bg-white/20 rounded-full px-4 py-2 transition-all duration-200 hover:scale-105 bg-gradient-to-r from-orange-500/20 to-yellow-500/20"
                   onClick={() => navigate('/visual-coding')}
                 >
                   <Blocks className="h-4 w-4 mr-2" />
@@ -433,7 +437,7 @@ const ClassroomDashboard = () => {
                  <Button
                    variant="ghost"
                    size="sm"
-                   className={getNavButtonClassName('progress')}
+                   className={`${getNavButtonClassName('progress')} rounded-full px-4 py-2 transition-all duration-200 hover:scale-105`}
                    onClick={() => setCurrentView('progress')}
                  >
                    <TrendingUp className="h-4 w-4 mr-2" />
@@ -443,19 +447,23 @@ const ClassroomDashboard = () => {
                  <Button
                    variant="ghost"
                    size="sm"
-                   className={getNavButtonClassName('files')}
+                   className={`${getNavButtonClassName('files')} rounded-full px-4 py-2 transition-all duration-200 hover:scale-105`}
                    onClick={() => setCurrentView('files')}
                  >
                    <Folder className="h-4 w-4 mr-2" />
                    Files
                  </Button>
+              </div>
+            )}
+            
+            <div className="flex items-center space-x-3">
                  
-                 {userRole === 'teacher' && (
-                   <>
+                 {userRole === 'teacher' && selectedClass && (
+                   <div className="flex items-center space-x-2 border-l border-white/20 pl-4">
                      <Button
                        variant="ghost"
                        size="sm"
-                       className={getNavButtonClassName('monitoring')}
+                       className={`${getNavButtonClassName('monitoring')} rounded-full px-4 py-2 transition-all duration-200 hover:scale-105`}
                        onClick={() => setCurrentView('monitoring')}
                      >
                        <Monitor className="h-4 w-4 mr-2" />
@@ -465,7 +473,7 @@ const ClassroomDashboard = () => {
                      <Button
                        variant="ghost"
                        size="sm"
-                       className={getNavButtonClassName('gradebook')}
+                       className={`${getNavButtonClassName('gradebook')} rounded-full px-4 py-2 transition-all duration-200 hover:scale-105`}
                        onClick={() => setCurrentView('gradebook')}
                      >
                        <GraduationCap className="h-4 w-4 mr-2" />
@@ -475,7 +483,7 @@ const ClassroomDashboard = () => {
                       <Button
                         variant="ghost"
                         size="sm"
-                        className={getNavButtonClassName('whiteboard')}
+                        className={`${getNavButtonClassName('whiteboard')} rounded-full px-4 py-2 transition-all duration-200 hover:scale-105`}
                         onClick={() => setCurrentView('whiteboard')}
                       >
                         <Palette className="h-4 w-4 mr-2" />
@@ -485,94 +493,45 @@ const ClassroomDashboard = () => {
                       <Button
                         variant="ghost"
                         size="sm"
-                        className={getNavButtonClassName('polls')}
+                        className={`${getNavButtonClassName('polls')} rounded-full px-4 py-2 transition-all duration-200 hover:scale-105`}
                         onClick={() => setCurrentView('polls')}
                       >
                         <BarChart3 className="h-4 w-4 mr-2" />
                         Polls
                       </Button>
                       
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className={getNavButtonClassName('settings')}
-                        onClick={() => setCurrentView('settings')}
-                      >
-                        <Settings className="h-4 w-4 mr-2" />
-                        Settings
-                      </Button>
-                    </>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className={`${getNavButtonClassName('settings')} rounded-full px-4 py-2 transition-all duration-200 hover:scale-105`}
+                          onClick={() => setCurrentView('settings')}
+                        >
+                          <Settings className="h-4 w-4 mr-2" />
+                          Settings
+                        </Button>
+                    </div>
                   )}
-              </>
-            )}
-            
-            {/* Global navigation */}
-            {!selectedClass && (
-              <>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className={getNavButtonClassName('classes')}
-                  onClick={() => setCurrentView('classes')}
-                >
-                  <BookOpen className="h-4 w-4 mr-2" />
-                  Classes
-                </Button>
-                
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-white hover:bg-white/20"
-                  onClick={() => navigate('/py-notebook')}
-                >
-                  <FileText className="h-4 w-4 mr-2" />
-                  Python Notebook
-                </Button>
-                
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-white hover:bg-white/20"
-                  onClick={() => navigate('/visual-coding')}
-                >
-                  <Blocks className="h-4 w-4 mr-2" />
-                  Visual Coding
-                </Button>
-                
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-white hover:bg-white/20"
-                  onClick={() => navigate('/python-editor')}
-                >
-                  <Code className="h-4 w-4 mr-2" />
-                  Python Editor
-                </Button>
-                
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className={getNavButtonClassName('profile')}
-                  onClick={() => setCurrentView('profile')}
-                >
-                  <User className="h-4 w-4 mr-2" />
-                  Profile
-                </Button>
-              </>
-            )}
-            
-            <div className="text-white text-sm">
-              {user?.email}
+                  
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-white hover:bg-white/20 rounded-full px-4 py-2 transition-all duration-200 hover:scale-105"
+                    onClick={() => setCurrentView('profile')}
+                  >
+                    <User className="h-4 w-4 mr-2" />
+                    Profile
+                  </Button>
+                  
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-white hover:bg-red-500/20 rounded-full px-4 py-2 transition-all duration-200 hover:scale-105"
+                    onClick={signOut}
+                  >
+                    <LogOut className="h-4 w-4 mr-2" />
+                    Logout
+                  </Button>
             </div>
-            
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={signOut}
-              className="text-white hover:bg-white/20"
-            >
-              <LogOut className="h-4 w-4" />
-            </Button>
           </div>
         </div>
         
@@ -598,8 +557,12 @@ const ClassroomDashboard = () => {
         )}
       </div>
 
-      {/* Main Content */}
-      {renderCurrentView()}
+      {/* Content Area */}
+      <div className="flex-1 p-6 overflow-auto">
+        <div className="max-w-7xl mx-auto">
+          {renderCurrentView()}
+        </div>
+      </div>
     </div>
   );
 };
