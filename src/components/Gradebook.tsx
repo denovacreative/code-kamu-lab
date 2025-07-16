@@ -165,11 +165,11 @@ const Gradebook = ({ classId, className, onBack }: GradebookProps) => {
   };
 
   const getGradeColor = (percentage: number) => {
-    if (percentage >= 90) return 'text-green-600';
-    if (percentage >= 80) return 'text-blue-600';
-    if (percentage >= 70) return 'text-yellow-600';
-    if (percentage >= 60) return 'text-orange-600';
-    return 'text-red-600';
+    if (percentage >= 90) return 'text-green-600 bg-green-50';
+    if (percentage >= 80) return 'text-blue-600 bg-blue-50';
+    if (percentage >= 70) return 'text-yellow-600 bg-yellow-50';
+    if (percentage >= 60) return 'text-orange-600 bg-orange-50';
+    return 'text-red-600 bg-red-50';
   };
 
   const getGradeLetter = (percentage: number) => {
@@ -303,11 +303,14 @@ const Gradebook = ({ classId, className, onBack }: GradebookProps) => {
                         return (
                           <td key={assignment.id} className="text-center p-2">
                             {score !== null ? (
-                              <Badge variant="outline" className="text-xs">
+                              <Badge 
+                                variant="outline" 
+                                className={`text-xs ${score === assignment.max_score ? 'bg-green-100 text-green-700 border-green-300' : score >= assignment.max_score * 0.8 ? 'bg-blue-100 text-blue-700 border-blue-300' : 'bg-gray-100 text-gray-700 border-gray-300'}`}
+                              >
                                 {score}/{assignment.max_score}
                               </Badge>
                             ) : (
-                              <span className="text-gray-400 text-xs">—</span>
+                              <span className="text-gray-400 text-xs bg-gray-100 px-2 py-1 rounded">Not Submitted</span>
                             )}
                           </td>
                         );
@@ -316,11 +319,15 @@ const Gradebook = ({ classId, className, onBack }: GradebookProps) => {
                         {student.total_score}/{student.total_possible}
                       </td>
                       <td className="text-center p-2">
-                        <div className={`font-bold ${getGradeColor(student.percentage)}`}>
-                          {getGradeLetter(student.percentage)}
-                        </div>
-                        <div className="text-xs text-gray-500">
-                          {student.percentage.toFixed(1)}%
+                        <div className={`inline-flex items-center justify-center min-w-16 px-3 py-2 rounded-full font-bold text-sm ${getGradeColor(student.percentage)}`}>
+                          <div>
+                            <div className="font-bold">
+                              {getGradeLetter(student.percentage)}
+                            </div>
+                            <div className="text-xs opacity-80">
+                              {student.percentage.toFixed(1)}%
+                            </div>
+                          </div>
                         </div>
                       </td>
                     </tr>

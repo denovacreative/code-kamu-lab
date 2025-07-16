@@ -404,138 +404,154 @@ const ClassroomWhiteboard = ({ classId, userRole, isReadOnly = false }: Whiteboa
   };
 
   return (
-    <Card className="h-full flex flex-col">
-      <CardHeader className="pb-2">
-        <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center text-lg">
-            <Palette className="h-5 w-5 mr-2 text-purple-600" />
-            Interactive Whiteboard
-          </CardTitle>
-          <div className="flex items-center space-x-2">
-            <Badge variant="outline" className="text-xs">
-              <Users className="h-3 w-3 mr-1" />
-              {onlineUsers} online
-            </Badge>
-            {userRole === 'teacher' && (
-              <Badge variant="secondary" className="text-xs">Teacher Mode</Badge>
-            )}
+    <div className="h-full flex flex-col space-y-4">
+      {/* Header */}
+      <Card className="bg-white/95 backdrop-blur-sm">
+        <CardHeader className="pb-2">
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center text-lg">
+              <Palette className="h-5 w-5 mr-2 text-purple-600" />
+              Interactive Whiteboard
+            </CardTitle>
+            <div className="flex items-center space-x-2">
+              <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-300">
+                <Users className="h-3 w-3 mr-1" />
+                {onlineUsers} online
+              </Badge>
+              {userRole === 'teacher' && (
+                <Badge variant="secondary" className="text-xs bg-blue-50 text-blue-700">Teacher Mode</Badge>
+              )}
+              {isReadOnly && (
+                <Badge variant="outline" className="text-xs bg-yellow-50 text-yellow-700 border-yellow-300">
+                  <Eye className="h-3 w-3 mr-1" />
+                  Read Only
+                </Badge>
+              )}
+            </div>
           </div>
-        </div>
 
-        {/* Tools */}
-        <div className="flex flex-wrap items-center gap-2 mt-2">
-          {/* Drawing Tools */}
-          <div className="flex items-center space-x-1 bg-gray-100 rounded-lg p-1">
-            {['pen', 'eraser', 'line', 'circle', 'rectangle', 'text', 'pointer'].map((tool) => {
-              const IconComponent = getToolIcon(tool);
-              return (
-                <Button
-                  key={tool}
-                  variant={currentTool === tool ? "default" : "ghost"}
-                  size="sm"
-                  className="h-8 w-8 p-0"
-                  onClick={() => setCurrentTool(tool as any)}
+          {/* Tools */}
+          <div className="flex flex-wrap items-center gap-2 mt-3 p-3 bg-gray-50 rounded-lg">
+            {/* Drawing Tools */}
+            <div className="flex items-center space-x-1 bg-white rounded-lg p-1 shadow-sm">
+              {['pen', 'eraser', 'line', 'circle', 'rectangle', 'text', 'pointer'].map((tool) => {
+                const IconComponent = getToolIcon(tool);
+                return (
+                  <Button
+                    key={tool}
+                    variant={currentTool === tool ? "default" : "ghost"}
+                    size="sm"
+                    className={`h-8 w-8 p-0 ${currentTool === tool ? 'bg-blue-600 text-white' : 'text-gray-600 hover:bg-gray-100'}`}
+                    onClick={() => setCurrentTool(tool as any)}
+                    disabled={isReadOnly && userRole === 'student'}
+                    title={tool.charAt(0).toUpperCase() + tool.slice(1)}
+                  >
+                    <IconComponent className="h-4 w-4" />
+                  </Button>
+                );
+              })}
+            </div>
+
+            {/* Colors */}
+            <div className="flex items-center space-x-1 bg-white rounded-lg p-1 shadow-sm">
+              {colors.map((color) => (
+                <button
+                  key={color}
+                  className={`w-6 h-6 rounded-full border-2 transition-all hover:scale-110 ${currentColor === color ? 'border-gray-800 shadow-md' : 'border-gray-300 hover:border-gray-500'}`}
+                  style={{ backgroundColor: color }}
+                  onClick={() => setCurrentColor(color)}
                   disabled={isReadOnly && userRole === 'student'}
-                >
-                  <IconComponent className="h-4 w-4" />
-                </Button>
-              );
-            })}
-          </div>
+                  title={`Color: ${color}`}
+                />
+              ))}
+            </div>
 
-          {/* Colors */}
-          <div className="flex items-center space-x-1 bg-gray-100 rounded-lg p-1">
-            {colors.map((color) => (
-              <button
-                key={color}
-                className={`w-6 h-6 rounded border-2 ${currentColor === color ? 'border-gray-600' : 'border-gray-300'}`}
-                style={{ backgroundColor: color }}
-                onClick={() => setCurrentColor(color)}
+            {/* Stroke Width */}
+            <div className="flex items-center space-x-2 bg-white rounded-lg p-2 shadow-sm">
+              <span className="text-xs text-gray-600 font-medium">Size:</span>
+              <Slider
+                value={strokeWidth}
+                onValueChange={setStrokeWidth}
+                max={20}
+                min={1}
+                step={1}
+                className="w-20"
                 disabled={isReadOnly && userRole === 'student'}
               />
+              <span className="text-xs text-gray-600 w-6 font-bold">{strokeWidth[0]}</span>
+            </div>
+
+            {/* Actions */}
+            <div className="flex items-center space-x-1 ml-auto">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={downloadWhiteboard}
+                className="bg-white shadow-sm"
+              >
+                <Download className="h-4 w-4 mr-1" />
+                Save Image
+              </Button>
+              {userRole === 'teacher' && (
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={clearWhiteboard}
+                  className="shadow-sm"
+                >
+                  <Trash2 className="h-4 w-4 mr-1" />
+                  Clear All
+                </Button>
+              )}
+            </div>
+          </div>
+        </CardHeader>
+      </Card>
+
+      {/* Canvas Area */}
+      <Card className="flex-1 bg-white/95 backdrop-blur-sm">
+        <CardContent className="p-2 h-full">
+          <div className="relative h-full bg-white border-2 border-dashed border-gray-200 rounded-lg overflow-hidden">
+            <canvas
+              ref={canvasRef}
+              width={800}
+              height={600}
+              className="absolute inset-0 cursor-crosshair w-full h-full"
+              onMouseDown={startDrawing}
+              onMouseMove={draw}
+              onMouseUp={stopDrawing}
+              onMouseLeave={stopDrawing}
+              style={{ 
+                cursor: currentTool === 'pointer' ? 'default' : 
+                       currentTool === 'eraser' ? 'crosshair' : 
+                       currentTool === 'text' ? 'text' : 'crosshair'
+              }}
+            />
+            
+            {/* Collaborative Cursors */}
+            {Object.entries(cursors).map(([userId, cursor]) => (
+              <div
+                key={userId}
+                className="absolute pointer-events-none z-10"
+                style={{
+                  left: cursor.x,
+                  top: cursor.y,
+                  transform: 'translate(-2px, -2px)'
+                }}
+              >
+                <div 
+                  className="w-4 h-4 rounded-full border-2 border-white shadow-lg"
+                  style={{ backgroundColor: cursor.color }}
+                />
+                <div className="text-xs bg-black text-white px-1 rounded mt-1 shadow-md">
+                  {cursor.name}
+                </div>
+              </div>
             ))}
           </div>
-
-          {/* Stroke Width */}
-          <div className="flex items-center space-x-2 bg-gray-100 rounded-lg p-2">
-            <span className="text-xs text-gray-600">Size:</span>
-            <Slider
-              value={strokeWidth}
-              onValueChange={setStrokeWidth}
-              max={20}
-              min={1}
-              step={1}
-              className="w-16"
-              disabled={isReadOnly && userRole === 'student'}
-            />
-            <span className="text-xs text-gray-600 w-6">{strokeWidth[0]}</span>
-          </div>
-
-          {/* Actions */}
-          <div className="flex items-center space-x-1">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={downloadWhiteboard}
-            >
-              <Download className="h-4 w-4 mr-1" />
-              Save
-            </Button>
-            {userRole === 'teacher' && (
-              <Button
-                variant="destructive"
-                size="sm"
-                onClick={clearWhiteboard}
-              >
-                <Trash2 className="h-4 w-4 mr-1" />
-                Clear
-              </Button>
-            )}
-          </div>
-        </div>
-      </CardHeader>
-
-      <CardContent className="flex-1 p-2">
-        <div className="relative h-full bg-white border rounded-lg overflow-hidden">
-          <canvas
-            ref={canvasRef}
-            width={800}
-            height={600}
-            className="absolute inset-0 cursor-crosshair"
-            onMouseDown={startDrawing}
-            onMouseMove={draw}
-            onMouseUp={stopDrawing}
-            onMouseLeave={stopDrawing}
-            style={{ 
-              cursor: currentTool === 'pointer' ? 'default' : 
-                     currentTool === 'eraser' ? 'crosshair' : 
-                     currentTool === 'text' ? 'text' : 'crosshair'
-            }}
-          />
-          
-          {/* Collaborative Cursors */}
-          {Object.entries(cursors).map(([userId, cursor]) => (
-            <div
-              key={userId}
-              className="absolute pointer-events-none z-10"
-              style={{
-                left: cursor.x,
-                top: cursor.y,
-                transform: 'translate(-2px, -2px)'
-              }}
-            >
-              <div 
-                className="w-4 h-4 rounded-full border-2 border-white"
-                style={{ backgroundColor: cursor.color }}
-              />
-              <div className="text-xs bg-black text-white px-1 rounded mt-1">
-                {cursor.name}
-              </div>
-            </div>
-          ))}
-        </div>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+    </div>
   );
 };
 

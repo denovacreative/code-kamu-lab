@@ -64,18 +64,19 @@ const Dashboard = () => {
           icon: FileText,
           color: "bg-pictoblox-orange",
           route: "/py-notebook"
-        },
-        {
-          title: "Classroom",
-          description: "Interactive classroom for teachers and students with real-time collaboration.",
-          age: "Ages 12+", 
-          icon: Users,
-          color: "bg-pictoblox-purple",
-          route: "/classroom"
         }
       ]
     }
   ];
+
+  const classroomFeature = {
+    title: "Classroom",
+    description: "Interactive classroom for teachers and students with real-time collaboration.",
+    age: "Ages 12+", 
+    icon: Users,
+    color: "bg-pictoblox-purple",
+    route: "/classroom"
+  };
 
   const advancedFeatures = [
     {
@@ -193,6 +194,42 @@ const Dashboard = () => {
               </div>
             </div>
           ))}
+
+          {/* Classroom Section */}
+          <div className="mb-8">
+            <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">
+              Collaborative Learning
+            </h2>
+            <div className="max-w-md mx-auto">
+              <Card className="relative overflow-hidden border-2 border-gray-200 hover:border-gray-300 transition-all duration-300 hover:shadow-lg group cursor-pointer">
+                <CardContent className="p-6">
+                  <div className="flex justify-between items-start mb-4">
+                    <Badge variant="outline" className="text-purple-600 border-purple-300 bg-purple-50">
+                      {classroomFeature.age}
+                    </Badge>
+                  </div>
+                  
+                  <div className="flex items-center space-x-4 mb-4">
+                    <div className={`p-3 rounded-xl ${classroomFeature.color} text-white`}>
+                      <classroomFeature.icon className="w-8 h-8" />
+                    </div>
+                    <h3 className="text-xl font-bold text-gray-800">{classroomFeature.title}</h3>
+                  </div>
+                  
+                  <p className="text-gray-600 mb-4">
+                    {classroomFeature.description}
+                  </p>
+                  
+                  <Button 
+                    className="w-full bg-[hsl(var(--pictoblox-purple))] hover:bg-[hsl(var(--pictoblox-purple-dark))] text-white"
+                    onClick={() => navigate(classroomFeature.route)}
+                  >
+                    Enter Classroom
+                  </Button>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
 
           {/* Advanced Features */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
