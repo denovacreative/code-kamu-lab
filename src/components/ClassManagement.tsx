@@ -293,10 +293,10 @@ const ClassManagement = ({ userRole, onJoinClass, onCreateClass }: ClassManageme
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">
+          <h2 className="text-2xl font-bold text-foreground">
             {userRole === 'teacher' ? 'My Classes' : 'Joined Classes'}
           </h2>
-          <p className="text-gray-600">
+          <p className="text-muted-foreground">
             {userRole === 'teacher' 
               ? 'Create and manage your Python classes' 
               : 'Join classes and code together'

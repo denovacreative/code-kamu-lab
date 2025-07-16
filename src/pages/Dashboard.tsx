@@ -30,6 +30,7 @@ const Dashboard = () => {
           title: "Junior Blocks",
           description: "Code by stacking puzzle-shaped blocks",
           age: "Ages 4+",
+          badge: "Coming Soon",
           icon: Blocks,
           color: "bg-pictoblox-orange",
           route: "/junior-blocks"
@@ -81,6 +82,7 @@ const Dashboard = () => {
       title: "Machine Learning Environment",
       description: "Train ML models for image, object, face, pose (hand and body), sound, NLP, and numbers",
       age: "Ages 12+",
+      badge: "Coming Soon",
       icon: Brain,
       color: "bg-pictoblox-purple",
       route: "/ml-environment"
@@ -89,7 +91,7 @@ const Dashboard = () => {
       title: "3D and XR Studio", 
       description: "Create interactive 3D projects in AR/VR with animations, physics, trackers, filters, and much more",
       age: "Ages 12+",
-      badge: "Beta",
+      badge: "Coming Soon",
       icon: Box,
       color: "bg-pictoblox-blue",
       route: "/3d-xr-studio"
