@@ -546,10 +546,10 @@ const ClassroomDashboard = () => {
             </div>
             
             <div className="flex items-center space-x-2">
-              <Badge variant="secondary" className="text-xs">
+              <Badge className="text-xs bg-white/20 text-white border-white/30">
                 {userRole === 'teacher' ? 'Teaching' : 'Learning'}
               </Badge>
-              <Badge variant="outline" className="text-xs text-white border-white/40">
+              <Badge className="text-xs bg-white/20 text-white border-white/30">
                 {currentView.charAt(0).toUpperCase() + currentView.slice(1)}
               </Badge>
             </div>
