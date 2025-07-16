@@ -61,7 +61,7 @@ const Landing = () => {
               </Link>
               
               <Link to="/visual-coding">
-                <Button size="lg" variant="outline" className="border-white/30 text-white hover:bg-white/10 px-8 py-3 text-lg">
+                <Button size="lg" className="bg-white/20 backdrop-blur-sm text-white border border-white/40 hover:bg-white/30 hover:text-white px-8 py-3 text-lg font-semibold">
                   <Play className="mr-2 h-5 w-5" />
                   Try Visual Coding
                 </Button>
