@@ -35,8 +35,11 @@ import {
   FileText,
   Code,
   Palette,
-  BarChart3
+  BarChart3,
+  ChevronDown,
+  MoreHorizontal
 } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
 interface ClassData {
   id: string;
@@ -444,73 +447,75 @@ const ClassroomDashboard = () => {
                    Progress
                  </Button>
                  
-                 <Button
-                   variant="ghost"
-                   size="sm"
-                   className={`${getNavButtonClassName('files')} rounded-full px-4 py-2 transition-all duration-200 hover:scale-105`}
-                   onClick={() => setCurrentView('files')}
-                 >
-                   <Folder className="h-4 w-4 mr-2" />
-                   Files
-                 </Button>
+                 {/* Lainnya (Others) Dropdown Menu */}
+                 <DropdownMenu>
+                   <DropdownMenuTrigger asChild>
+                     <Button
+                       variant="ghost"
+                       size="sm"
+                       className="text-white hover:bg-white/20 rounded-full px-4 py-2 transition-all duration-200 hover:scale-105"
+                     >
+                       <MoreHorizontal className="h-4 w-4 mr-2" />
+                       Lainnya
+                       <ChevronDown className="h-4 w-4 ml-2" />
+                     </Button>
+                   </DropdownMenuTrigger>
+                   <DropdownMenuContent className="bg-white/95 backdrop-blur-sm border-white/20">
+                     {userRole === 'teacher' && (
+                       <>
+                         <DropdownMenuItem 
+                           onClick={() => setCurrentView('monitoring')}
+                           className="cursor-pointer hover:bg-white/20"
+                         >
+                           <Monitor className="h-4 w-4 mr-2" />
+                           Monitor
+                         </DropdownMenuItem>
+                         <DropdownMenuItem 
+                           onClick={() => setCurrentView('gradebook')}
+                           className="cursor-pointer hover:bg-white/20"
+                         >
+                           <GraduationCap className="h-4 w-4 mr-2" />
+                           Gradebook
+                         </DropdownMenuItem>
+                       </>
+                     )}
+                     <DropdownMenuItem 
+                       onClick={() => setCurrentView('whiteboard')}
+                       className="cursor-pointer hover:bg-white/20"
+                     >
+                       <Palette className="h-4 w-4 mr-2" />
+                       Whiteboard
+                     </DropdownMenuItem>
+                     <DropdownMenuItem 
+                       onClick={() => setCurrentView('polls')}
+                       className="cursor-pointer hover:bg-white/20"
+                     >
+                       <BarChart3 className="h-4 w-4 mr-2" />
+                       Interactive Polls
+                     </DropdownMenuItem>
+                     <DropdownMenuItem 
+                       onClick={() => setCurrentView('files')}
+                       className="cursor-pointer hover:bg-white/20"
+                     >
+                       <Folder className="h-4 w-4 mr-2" />
+                       Files
+                     </DropdownMenuItem>
+                     {userRole === 'teacher' && (
+                       <DropdownMenuItem 
+                         onClick={() => setCurrentView('settings')}
+                         className="cursor-pointer hover:bg-white/20"
+                       >
+                         <Settings className="h-4 w-4 mr-2" />
+                         Settings
+                       </DropdownMenuItem>
+                     )}
+                   </DropdownMenuContent>
+                 </DropdownMenu>
               </div>
             )}
             
             <div className="flex items-center space-x-3">
                  
-                 {userRole === 'teacher' && selectedClass && (
-                   <div className="flex items-center space-x-2 border-l border-white/20 pl-4">
-                     <Button
-                       variant="ghost"
-                       size="sm"
-                       className={`${getNavButtonClassName('monitoring')} rounded-full px-4 py-2 transition-all duration-200 hover:scale-105`}
-                       onClick={() => setCurrentView('monitoring')}
-                     >
-                       <Monitor className="h-4 w-4 mr-2" />
-                       Monitor
-                     </Button>
-                     
-                     <Button
-                       variant="ghost"
-                       size="sm"
-                       className={`${getNavButtonClassName('gradebook')} rounded-full px-4 py-2 transition-all duration-200 hover:scale-105`}
-                       onClick={() => setCurrentView('gradebook')}
-                     >
-                       <GraduationCap className="h-4 w-4 mr-2" />
-                       Gradebook
-                     </Button>
-                     
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className={`${getNavButtonClassName('whiteboard')} rounded-full px-4 py-2 transition-all duration-200 hover:scale-105`}
-                        onClick={() => setCurrentView('whiteboard')}
-                      >
-                        <Palette className="h-4 w-4 mr-2" />
-                        Whiteboard
-                      </Button>
-                      
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className={`${getNavButtonClassName('polls')} rounded-full px-4 py-2 transition-all duration-200 hover:scale-105`}
-                        onClick={() => setCurrentView('polls')}
-                      >
-                        <BarChart3 className="h-4 w-4 mr-2" />
-                        Polls
-                      </Button>
-                      
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className={`${getNavButtonClassName('settings')} rounded-full px-4 py-2 transition-all duration-200 hover:scale-105`}
-                          onClick={() => setCurrentView('settings')}
-                        >
-                          <Settings className="h-4 w-4 mr-2" />
-                          Settings
-                        </Button>
-                    </div>
-                  )}
                   
                   <Button
                     variant="ghost"
