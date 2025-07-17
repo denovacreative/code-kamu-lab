@@ -200,28 +200,29 @@ const Dashboard = () => {
             <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">
               Collaborative Learning
             </h2>
-            <div className="max-w-md mx-auto">
+            <div className="max-w-2xl mx-auto">
               <Card className="relative overflow-hidden border-2 border-gray-200 hover:border-gray-300 transition-all duration-300 hover:shadow-lg group cursor-pointer">
-                <CardContent className="p-6">
-                  <div className="flex justify-between items-start mb-4">
+                <CardContent className="p-8">
+                  <div className="flex justify-between items-start mb-6">
                     <Badge variant="outline" className="text-purple-600 border-purple-300 bg-purple-50">
                       {classroomFeature.age}
                     </Badge>
                   </div>
                   
-                  <div className="flex items-center space-x-4 mb-4">
-                    <div className={`p-3 rounded-xl ${classroomFeature.color} text-white`}>
-                      <classroomFeature.icon className="w-8 h-8" />
+                  <div className="flex items-center space-x-6 mb-6">
+                    <div className={`p-4 rounded-xl ${classroomFeature.color} text-white`}>
+                      <classroomFeature.icon className="w-10 h-10" />
                     </div>
-                    <h3 className="text-xl font-bold text-gray-800">{classroomFeature.title}</h3>
+                    <div className="flex-1">
+                      <h3 className="text-2xl font-bold text-gray-800 mb-2">{classroomFeature.title}</h3>
+                      <p className="text-gray-600 text-lg">
+                        {classroomFeature.description}
+                      </p>
+                    </div>
                   </div>
                   
-                  <p className="text-gray-600 mb-4">
-                    {classroomFeature.description}
-                  </p>
-                  
                   <Button 
-                    className="w-full bg-[hsl(var(--pictoblox-purple))] hover:bg-[hsl(var(--pictoblox-purple-dark))] text-white"
+                    className="w-full bg-[hsl(var(--pictoblox-purple))] hover:bg-[hsl(var(--pictoblox-purple-dark))] text-white text-lg py-3"
                     onClick={() => navigate(classroomFeature.route)}
                   >
                     Enter Classroom
